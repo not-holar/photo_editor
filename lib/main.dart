@@ -1,109 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hello_world/editor.dart';
+import 'package:flutter_hello_world/gallery.dart';
+import 'package:hsluv/extensions.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(App());
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+Color bottomNavigationColor() =>
+    WidgetsBinding.instance.window.platformBrightness == Brightness.dark
+        ? hsluvToRGBColor([75, 0, 10])
+        : Colors.white;
+
+final ThemeData themeDataLight = ThemeData(
+  brightness: Brightness.light,
+  primaryColorBrightness: Brightness.light,
+  splashFactory: InkRipple.splashFactory,
+  highlightColor: Colors.transparent,
+  accentColor: hsluvToRGBColor([75, 10, 50]),
+  scaffoldBackgroundColor: hsluvToRGBColor([75, 0, 95]),
+  unselectedWidgetColor: Colors.black26,
+  colorScheme: ColorScheme.light(
+    primary: hsluvToRGBColor([75, 10, 50]),
+    primaryVariant: hsluvToRGBColor([75, 10, 40]),
+  ),
+  floatingActionButtonTheme: FloatingActionButtonThemeData(
+    backgroundColor: hsluvToRGBColor([75, 10, 50]),
+  ),
+);
+
+final ThemeData themeData = ThemeData(
+  brightness: Brightness.dark,
+  splashFactory: InkRipple.splashFactory,
+  highlightColor: Colors.transparent,
+  accentColor: hsluvToRGBColor([75, 10, 90]),
+  scaffoldBackgroundColor: Colors.black,
+  cardColor: hsluvToRGBColor([75, 0, 6]),
+  unselectedWidgetColor: Colors.white24,
+  colorScheme: ColorScheme.dark(
+    primary: hsluvToRGBColor([75, 10, 80]),
+    primaryVariant: hsluvToRGBColor([75, 10, 60]),
+    surface: hsluvToRGBColor([75, 0, 10]),
+  ),
+  floatingActionButtonTheme: FloatingActionButtonThemeData(
+    backgroundColor: hsluvToRGBColor([75, 10, 80]),
+  ),
+  canvasColor: hsluvToRGBColor([75, 0, 10]),
+);
+
+class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        cardColor: Color.fromARGB(255, 22, 22, 22),
-        colorScheme: ColorScheme.dark(
-          primary: Color.fromARGB(255, 255, 216, 58),
-          primaryVariant: Color.fromARGB(255, 160, 135, 36),
-          surface: Color.fromARGB(255, 22, 22, 22),
+      theme: themeDataLight,
+      darkTheme: themeData,
+      home: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness:
+              WidgetsBinding.instance.window.platformBrightness ==
+                      Brightness.light
+                  ? Brightness.dark
+                  : Brightness.light,
+          systemNavigationBarColor: bottomNavigationColor(),
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.light,
         ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: Color.fromARGB(255, 255, 216, 58),
-        ),
+        child: Home(),
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class Home extends StatefulWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _HomeState createState() => _HomeState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomeState extends State<Home> {
+  int _currentIndex = 0;
 
-  void _add_a_photo() {
+  void onTabTapped(int index) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _currentIndex = index;
     });
   }
 
+  final List<Widget> _children = [
+    GalleryPage(),
+    EditorPage(),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-      ),
-      child: Scaffold(
-        body: Center(
-          child: SafeArea(
-            child: GridView.count(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 56),
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              crossAxisCount: 3,
-              children: List.generate(
-                33,
-                (index) {
-                  return Container(
-                    decoration:
-                        BoxDecoration(color: Theme.of(context).cardColor),
-                    child: Center(
-                      child: Text(
-                        'Item $index',
-                        style: Theme.of(context).textTheme.caption,
-                      ),
-                    ),
-                  );
-                },
-              ),
+    return Column(
+      children: <Widget>[
+        Flexible(
+          child: _children[_currentIndex],
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: bottomNavigationColor(),
+            border: Border(
+              top: Divider.createBorderSide(context),
             ),
           ),
+          child: BottomNavigationBar(
+            onTap: onTabTapped,
+            currentIndex: _currentIndex,
+            items: [
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.photo_library), title: Text("Gallery")),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.edit), title: Text("Editor")),
+            ],
+            backgroundColor: bottomNavigationColor(),
+            selectedItemColor: Theme.of(context).accentColor,
+            unselectedItemColor: Theme.of(context).unselectedWidgetColor,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            elevation: 0,
+          ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _add_a_photo,
-          tooltip: 'Add a photo',
-          child: Icon(Icons.add),
-        ), // This trailing comma makes auto-formatting nicer for build methods.
-      ),
+      ],
     );
   }
 }
