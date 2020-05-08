@@ -1,18 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:image_picker/image_picker.dart';
 
 class _Image {
-  String text;
+  File image;
 
-  _Image(String text) {
-    this.text = text;
-  }
+  _Image(this.image);
 }
 
-List<_Image> _images = List.generate(
-  33,
-  (index) => _Image('Image $index'),
-);
+List<_Image> _images = [];
+
+Future getImage() async {
+  var image = await ImagePicker.pickImage(source: ImageSource.gallery);
+  if (image != null) _images.insert(0, _Image(image));
+}
 
 class GalleryPage extends StatelessWidget {
   @override
@@ -35,7 +38,7 @@ class GalleryPage extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: getImage,
         tooltip: 'Add a photo',
         child: Icon(Icons.add),
       ),
@@ -53,11 +56,12 @@ class GalleryImage extends StatelessWidget {
     return Container(
       margin: EdgeInsets.all(4),
       decoration: BoxDecoration(color: Theme.of(context).cardColor),
-      child: Center(
-        child: Text(
-          image.text,
-          style: Theme.of(context).textTheme.caption,
-        ),
+      child: Image.file(
+        image.image,
+        filterQuality: FilterQuality.high,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+        cacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio / 3).round(),
       ),
     );
   }
