@@ -15,7 +15,7 @@ class GalleryPage extends StatelessWidget {
       extendBodyBehindAppBar: true,
       body: Stack(children: [
         Consumer<ImageDataList>(
-          builder: (_, images, __) {
+          builder: (context, images, _) {
             final gridController = DragSelectGridViewController();
 
             gridController.addListener(
@@ -46,7 +46,7 @@ class GalleryPage extends StatelessWidget {
       ]),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        child: const Icon(Icons.menu),
+        child: const Icon(Icons.more_vert),
         tooltip: 'Expand Gallery Menu',
       ),
     );

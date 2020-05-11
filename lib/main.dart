@@ -11,53 +11,53 @@ import 'logic/images.dart';
 void main() => runApp(App());
 
 class App extends StatelessWidget {
-  final theme = ThemeData(
-    brightness: Brightness.light,
-    primaryColorBrightness: Brightness.light,
-    splashFactory: InkRipple.splashFactory,
-    highlightColor: Colors.transparent,
-    accentColor: hsluvToRGBColor(const [75, 10, 50]),
-    scaffoldBackgroundColor: hsluvToRGBColor(const [75, 0, 95]),
-    unselectedWidgetColor: Colors.black26,
-    colorScheme: ColorScheme.light(
-      background: hsluvToRGBColor(const [75, 0, 95]),
-      surface: Colors.white,
-      primary: hsluvToRGBColor(const [75, 10, 50]),
-      primaryVariant: hsluvToRGBColor(const [75, 10, 40]),
-    ),
-    bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: Colors.white,
-    ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: hsluvToRGBColor(const [75, 10, 50]),
-      foregroundColor: Colors.white,
-    ),
-    canvasColor: Colors.white,
-  );
+  static get theme => ThemeData(
+        brightness: Brightness.light,
+        primaryColorBrightness: Brightness.light,
+        splashFactory: InkRipple.splashFactory,
+        highlightColor: Colors.transparent,
+        accentColor: hsluvToRGBColor(const [75, 10, 50]),
+        scaffoldBackgroundColor: hsluvToRGBColor(const [75, 0, 95]),
+        unselectedWidgetColor: Colors.black26,
+        colorScheme: ColorScheme.light(
+          background: hsluvToRGBColor(const [75, 0, 95]),
+          surface: Colors.white,
+          primary: hsluvToRGBColor(const [75, 10, 50]),
+          primaryVariant: hsluvToRGBColor(const [75, 10, 40]),
+        ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: Colors.white,
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: hsluvToRGBColor(const [75, 10, 50]),
+          foregroundColor: Colors.white,
+        ),
+        canvasColor: Colors.white,
+      );
 
-  final darkTheme = ThemeData(
-    brightness: Brightness.dark,
-    splashFactory: InkRipple.splashFactory,
-    highlightColor: Colors.transparent,
-    accentColor: hsluvToRGBColor(const [75, 10, 90]),
-    scaffoldBackgroundColor: Colors.black,
-    cardColor: hsluvToRGBColor(const [75, 0, 6]),
-    unselectedWidgetColor: Colors.white24,
-    colorScheme: ColorScheme.dark(
-      background: Colors.black,
-      surface: hsluvToRGBColor(const [75, 0, 10]),
-      primary: hsluvToRGBColor(const [75, 10, 80]),
-      primaryVariant: hsluvToRGBColor(const [75, 10, 60]),
-    ),
-    bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: hsluvToRGBColor(const [75, 0, 10]),
-    ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: hsluvToRGBColor(const [75, 10, 80]),
-      foregroundColor: Colors.black,
-    ),
-    canvasColor: hsluvToRGBColor(const [75, 0, 10]),
-  );
+  static get darkTheme => ThemeData(
+        brightness: Brightness.dark,
+        splashFactory: InkRipple.splashFactory,
+        highlightColor: Colors.transparent,
+        accentColor: hsluvToRGBColor(const [75, 10, 90]),
+        scaffoldBackgroundColor: Colors.black,
+        cardColor: hsluvToRGBColor(const [75, 0, 6]),
+        unselectedWidgetColor: Colors.white24,
+        colorScheme: ColorScheme.dark(
+          background: Colors.black,
+          surface: hsluvToRGBColor(const [75, 0, 10]),
+          primary: hsluvToRGBColor(const [75, 10, 80]),
+          primaryVariant: hsluvToRGBColor(const [75, 10, 60]),
+        ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: hsluvToRGBColor(const [75, 0, 10]),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: hsluvToRGBColor(const [75, 10, 80]),
+          foregroundColor: Colors.black54,
+        ),
+        canvasColor: hsluvToRGBColor(const [75, 0, 10]),
+      );
 
   @override
   Widget build(BuildContext context) {
