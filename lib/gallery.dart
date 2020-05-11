@@ -1,10 +1,11 @@
-import 'package:circular_check_box/circular_check_box.dart';
-import 'package:drag_select_grid_view/drag_select_grid_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:provider/provider.dart';
 
+import 'package:provider/provider.dart';
+import 'package:drag_select_grid_view/drag_select_grid_view.dart';
+
+import 'primitive/circular_check_box.dart';
 import 'logic/images.dart';
 
 class GalleryPage extends StatelessWidget {
@@ -120,10 +121,10 @@ class GalleryImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      fit: StackFit.expand,
       children: [
         Container(
-          color: Theme.of(context).dividerColor,
-          constraints: BoxConstraints.expand(),
+          color: Colors.grey.shade400.withOpacity(.5),
           child: AnimatedPadding(
             padding: EdgeInsets.all(selected ? 15 : 0),
             duration: const Duration(milliseconds: 250),
@@ -142,10 +143,24 @@ class GalleryImage extends StatelessWidget {
         ),
         Visibility(
           visible: selecting,
-          child: IgnorePointer(
-            child: CircularCheckBox(
-              value: selected,
-              onChanged: (_) {},
+          child: Container(
+            alignment: Alignment.bottomLeft,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black12,
+                  Colors.black.withOpacity(0),
+                ],
+              ),
+            ),
+            child: IgnorePointer(
+              child: CircularCheckBox(
+                checkColor: Colors.black,
+                activeColor: Colors.white,
+                inactiveColor: Colors.white54,
+                value: selected,
+                onChanged: (_) {},
+              ),
             ),
           ),
         ),
