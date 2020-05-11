@@ -9,49 +9,45 @@ import 'primitive/circular_check_box.dart';
 import 'logic/images.dart';
 
 class GalleryPage extends StatelessWidget {
-  static const double pillHeight = 50;
-  static const double bottomSheetPeekHeight = pillHeight;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          Consumer<ImageDataList>(
-            builder: (_, images, __) {
-              final gridController = DragSelectGridViewController();
+      body: Stack(children: [
+        Consumer<ImageDataList>(
+          builder: (_, images, __) {
+            final gridController = DragSelectGridViewController();
 
-              gridController.addListener(
-                () => print(gridController.selection),
-              );
+            gridController.addListener(
+              () => print(gridController.selection),
+            );
 
-              return DragSelectGridView(
-                gridController: gridController,
-                itemCount: images.list.length,
-                padding: EdgeInsets.fromLTRB(
-                  4,
-                  44 + MediaQuery.of(context).viewPadding.top,
-                  4,
-                  50 + bottomSheetPeekHeight,
-                ),
-                physics: const BouncingScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
-                  maxCrossAxisExtent: 150,
-                ),
-                itemBuilder: (_, index, selected) => GalleryImage(
-                  images.list[index],
-                  maxWidth: 150,
-                  selected: selected,
-                  selecting: gridController.selection.isSelecting,
-                ),
-              );
-            },
-          ),
-          const TopShadow(),
-        ],
+            return DragSelectGridView(
+              gridController: gridController,
+              itemCount: images.list.length,
+              padding: EdgeInsets.fromLTRB(
+                  4, 44 + MediaQuery.of(context).viewPadding.top, 4, 50),
+              physics: const BouncingScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+                maxCrossAxisExtent: 150,
+              ),
+              itemBuilder: (_, index, selected) => GalleryImage(
+                images.list[index],
+                maxWidth: 150,
+                selected: selected,
+                selecting: gridController.selection.isSelecting,
+              ),
+            );
+          },
+        ),
+        const TopShadow(),
+      ]),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        child: const Icon(Icons.menu),
+        tooltip: 'Expand Gallery Menu',
       ),
     );
   }
@@ -78,7 +74,7 @@ class GalleryImage extends StatelessWidget {
         Container(
           color: Colors.grey.shade400.withOpacity(.5),
           child: AnimatedPadding(
-            padding: EdgeInsets.all(selected ? 15 : 0),
+            padding: selected ? const EdgeInsets.all(15) : EdgeInsets.zero,
             duration: const Duration(milliseconds: 250),
             curve: Curves.ease,
             child: Image(
@@ -97,12 +93,9 @@ class GalleryImage extends StatelessWidget {
           visible: selecting,
           child: Container(
             alignment: Alignment.bottomLeft,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.black12,
-                  Colors.black.withOpacity(0),
-                ],
+            decoration: const BoxDecoration(
+              gradient: const LinearGradient(
+                colors: const [Colors.black26, Colors.black12],
               ),
             ),
             child: IgnorePointer(

@@ -34,6 +34,7 @@ class ImageDataList with ChangeNotifier {
   }
 
   final List<ImageData> list = [];
+  final message = ImageLogicMessage();
 
   void add(Iterable<File> images) {
     final filtered = images.where((x) => x != null);
@@ -53,5 +54,14 @@ class ImageDataList with ChangeNotifier {
     FilePicker.getMultiFile(type: FileType.image)?.then((x) {
       if (x != null) add(x);
     });
+  }
+}
+
+class ImageLogicMessage with ChangeNotifier {
+  String value;
+
+  void send(String msg) {
+    value = msg;
+    notifyListeners();
   }
 }

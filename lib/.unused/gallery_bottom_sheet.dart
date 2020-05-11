@@ -1,3 +1,6 @@
+static const double pillHeight = 50;
+static const double bottomSheetPeekHeight = pillHeight;
+
 Builder(
   builder: (context) {
     final images = Provider.of<ImageDataList>(context, listen: false);

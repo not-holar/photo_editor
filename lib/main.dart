@@ -30,6 +30,7 @@ class App extends StatelessWidget {
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: hsluvToRGBColor(const [75, 10, 50]),
+      foregroundColor: Colors.white,
     ),
     canvasColor: Colors.white,
   );
@@ -53,6 +54,7 @@ class App extends StatelessWidget {
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: hsluvToRGBColor(const [75, 10, 80]),
+      foregroundColor: Colors.black,
     ),
     canvasColor: hsluvToRGBColor(const [75, 0, 10]),
   );
@@ -68,17 +70,18 @@ class App extends StatelessWidget {
       title: 'Flutter Demo',
       theme: theme,
       darkTheme: darkTheme,
-      home: Builder(builder: (context) {
-        return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            systemNavigationBarColor: Theme.of(context).colorScheme.surface,
-            systemNavigationBarIconBrightness:
-                ThemeData.estimateBrightnessForColor(
-              Theme.of(context).colorScheme.onSurface,
+      home: Builder(
+        builder: (context) {
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle(
+              systemNavigationBarColor: Theme.of(context).colorScheme.surface,
+              systemNavigationBarIconBrightness:
+                  ThemeData.estimateBrightnessForColor(
+                Theme.of(context).colorScheme.onSurface,
+              ),
+              systemNavigationBarDividerColor: Colors.transparent,
             ),
-            systemNavigationBarDividerColor: Colors.transparent,
-          ),
-          child: ChangeNotifierProvider<ValueNotifier<int>>(
+            child: ChangeNotifierProvider<ValueNotifier<int>>(
               create: (context) => ValueNotifier<int>(0),
               child: Column(
                 children: <Widget>[
@@ -133,9 +136,11 @@ class App extends StatelessWidget {
                     ),
                   ),
                 ],
-              )),
-        );
-      }),
+              ),
+            ),
+          );
+        },
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
