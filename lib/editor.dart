@@ -9,9 +9,9 @@ class EditorPage extends StatefulWidget {
 class _EditorPageState extends State<EditorPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text("Editor"),
+    return const Scaffold(
+      body: const Center(
+        child: const Text("Editor"),
       ),
     );
   }
