@@ -202,39 +202,42 @@ class SelectionBar extends StatelessWidget {
         visible: selecting,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Theme.of(context).bottomAppBarColor.withOpacity(.75),
             border: Border(top: Divider.createBorderSide(context)),
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    context.read<ValueNotifier<Set<Key>>>().value = Set();
-                  },
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 25),
-                    child: Builder(builder: (context) {
-                      return Text(
-                        '${context.watch<ValueNotifier<Set<Key>>>().value.length}',
-                        textScaleFactor: 1.3,
-                      );
-                    }),
+          child: Material(
+            color: Theme.of(context).bottomAppBarColor.withOpacity(.75),
+            clipBehavior: Clip.hardEdge,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 5, 24, 5),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.clear, size: 20),
+                    onPressed: () {
+                      context.read<ValueNotifier<Set<Key>>>().value = Set();
+                    },
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () {
-                    context.read<ValueNotifier<Set<Key>>>().value = Set();
-                  },
-                ),
-              ],
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.center,
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 25),
+                      child: Builder(builder: (context) {
+                        return Text(
+                          '${context.watch<ValueNotifier<Set<Key>>>().value.length}',
+                          textScaleFactor: 1.1,
+                        );
+                      }),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    onPressed: () {
+                      context.read<ValueNotifier<Set<Key>>>().value = Set();
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
