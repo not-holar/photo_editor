@@ -37,9 +37,9 @@ class ImageDataList with ChangeNotifier {
 
   ImageDataList() {
     _imageAddedMessageStreamController =
-        StreamController<ImageDataListMessage>.broadcast();
+        StreamController<ImageDataListMessage>();
     _imageRemovedMessageStreamController =
-        StreamController<ImageDataListMessage>.broadcast();
+        StreamController<ImageDataListMessage>();
 
     imageAddedMessageStream = _imageAddedMessageStreamController.stream;
     imageRemovedMessageStream = _imageRemovedMessageStreamController.stream;

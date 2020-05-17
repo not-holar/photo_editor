@@ -21,10 +21,11 @@ class Main extends StatelessWidget {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: const TopShadow(),
-        body: Builder(builder: (context) {
-          subscribeToSnackbarStreams(context);
-          return GalleryGrid();
-        }),
+        body: Provider<void>(
+          child: GalleryGrid(),
+          create: subscribeToSnackbarStreams,
+          lazy: false,
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: context.select((ImageDataList x) => x.addFromPicker),
           child: const Icon(Icons.more_vert),
@@ -34,57 +35,6 @@ class Main extends StatelessWidget {
       ),
     );
   }
-}
-
-void subscribeToSnackbarStreams(BuildContext context) {
-  final showSnackBar = Scaffold.of(context).showSnackBar;
-
-  // Added Stream
-  context.select((ImageDataList x) => x.imageAddedMessageStream).forEach(
-    (message) async {
-      final reason = await showSnackBar(SnackBar(
-        // behavior: SnackBarBehavior.floating,
-        content: Text('Added ${message.changeAmount} images'),
-        action: message.undoAction == null
-            ? null
-            : SnackBarAction(
-                onPressed: message.undoAction,
-                label: "UNDO",
-              ),
-      )).closed;
-
-      if (reason != SnackBarClosedReason.action) {
-        message?.ignoreAction?.call();
-      }
-    },
-  );
-
-  // Removed Stream
-  context.select((ImageDataList x) => x.imageRemovedMessageStream).forEach(
-    (message) async {
-      final reason = await showSnackBar(SnackBar(
-        // behavior: SnackBarBehavior.floating,
-        content: Text(
-          'Removed ${message.changeAmount} images',
-          style: TextStyle(
-            color: Colors.white,
-          ),
-        ),
-        action: message.undoAction == null
-            ? null
-            : SnackBarAction(
-                onPressed: message.undoAction,
-                label: "UNDO",
-                textColor: Colors.white,
-              ),
-        backgroundColor: Colors.redAccent,
-      )).closed;
-
-      if (reason != SnackBarClosedReason.action) {
-        message?.ignoreAction?.call();
-      }
-    },
-  );
 }
 
 class GalleryGrid extends StatelessWidget {
@@ -331,4 +281,58 @@ class TopShadow extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
+}
+
+void subscribeToSnackbarStreams(BuildContext context) {
+  final showSnackBar = Scaffold.of(context).showSnackBar;
+  final imageDataList = context.read<ImageDataList>();
+
+  print("""Stream Subscription 🌊""");
+
+  // Added Stream
+  imageDataList.imageAddedMessageStream.forEach(
+    (message) async {
+      final reason = await showSnackBar(SnackBar(
+        // behavior: SnackBarBehavior.floating,
+        content: Text('Added ${message.changeAmount} images'),
+        action: message.undoAction == null
+            ? null
+            : SnackBarAction(
+                onPressed: message.undoAction,
+                label: "UNDO",
+              ),
+      )).closed;
+
+      if (reason != SnackBarClosedReason.action) {
+        message?.ignoreAction?.call();
+      }
+    },
+  );
+
+  // Removed Stream
+  imageDataList.imageRemovedMessageStream.forEach(
+    (message) async {
+      final reason = await showSnackBar(SnackBar(
+        // behavior: SnackBarBehavior.floating,
+        content: Text(
+          'Removed ${message.changeAmount} images',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        action: message.undoAction == null
+            ? null
+            : SnackBarAction(
+                onPressed: message.undoAction,
+                label: "UNDO",
+                textColor: Colors.white,
+              ),
+        backgroundColor: Colors.redAccent,
+      )).closed;
+
+      if (reason != SnackBarClosedReason.action) {
+        message?.ignoreAction?.call();
+      }
+    },
+  );
 }
