@@ -14,7 +14,7 @@ class Main extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<ValueNotifier<Set<Key>>>(
+        ChangeNotifierProvider<ValueNotifier<Set<ImageData>>>(
           create: (_) => ValueNotifier(Set()),
         ),
       ],
@@ -61,17 +61,11 @@ class GalleryGrid extends StatelessWidget {
               delegate: SliverChildBuilderDelegate(
                 (context, index) => GalleryImage(
                   imageDataList.list[index],
-                  key: imageDataList.list[index].key,
                   maxWidth: 150,
                   pixelRatio: devicePixelRatio,
                   backgroundColor: imageBackgroundColor,
                 ),
                 childCount: imageDataList.list.length,
-                findChildIndexCallback: (key) {
-                  return imageDataList.list.indexWhere((x) {
-                    return x.key == key;
-                  });
-                },
               ),
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 mainAxisSpacing: 4,
@@ -105,11 +99,11 @@ class GalleryImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context.select((ValueNotifier<Set<Key>> x) {
+    final selecting = context.select((ValueNotifier<Set<ImageData>> x) {
       return x.value.isNotEmpty;
     });
-    final selected = context.select((ValueNotifier<Set<Key>> x) {
-      return x.value.contains(key);
+    final selected = context.select((ValueNotifier<Set<ImageData>> x) {
+      return x.value.contains(image);
     });
 
     return Stack(
@@ -137,7 +131,7 @@ class GalleryImage extends StatelessWidget {
           color: Colors.transparent,
           elevation: 0,
           child: InkWell(
-            onTap: () => toggleSelection(context, selected, key),
+            onTap: () => toggleSelection(context, selected, image),
             onDoubleTap: selecting ? null : () => print("Open image"), // TODO
             enableFeedback: true,
             splashColor: Colors.white10,
@@ -172,13 +166,13 @@ class GalleryImage extends StatelessWidget {
   static void toggleSelection(
     BuildContext context,
     bool selected,
-    Key key,
+    ImageData image,
   ) async {
-    final v = context.read<ValueNotifier<Set<Key>>>();
+    final v = context.read<ValueNotifier<Set<ImageData>>>();
     if (selected) {
-      v.value = v.value.difference(Set.of([key]));
+      v.value = v.value.difference(Set.of([image]));
     } else {
-      v.value = v.value.union(Set.of([key]));
+      v.value = v.value.union(Set.of([image]));
     }
   }
 }
@@ -188,13 +182,13 @@ class SelectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context.select((ValueNotifier<Set<Key>> x) {
+    final selecting = context.select((ValueNotifier<Set<ImageData>> x) {
       return x.value.isNotEmpty;
     });
     return WillPopScope(
       onWillPop: () async {
         if (selecting) {
-          context.read<ValueNotifier<Set<Key>>>().value = Set();
+          context.read<ValueNotifier<Set<ImageData>>>().value = Set();
         }
         return !selecting;
       },
@@ -215,8 +209,9 @@ class SelectionBar extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () {
-                      context.read<ValueNotifier<Set<Key>>>().value = Set();
+                    onPressed: () async {
+                      context.read<ValueNotifier<Set<ImageData>>>().value =
+                          Set();
                     },
                   ),
                   Expanded(
@@ -224,7 +219,9 @@ class SelectionBar extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 25),
                       child: Builder(builder: (context) {
                         return Text(
-                          '${context.watch<ValueNotifier<Set<Key>>>().value.length}',
+                          context.select((ValueNotifier<Set<ImageData>> x) {
+                            return x.value.length;
+                          }).toString(),
                           textScaleFactor: 1.1,
                         );
                       }),
@@ -232,8 +229,9 @@ class SelectionBar extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed: () {
-                      context.read<ValueNotifier<Set<Key>>>().value = Set();
+                    onPressed: () async {
+                      context.read<ImageDataList>().remove(
+                          context.read<ValueNotifier<Set<ImageData>>>().value);
                     },
                   ),
                 ],

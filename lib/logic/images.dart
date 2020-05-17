@@ -35,6 +35,19 @@ class ImageDataList with ChangeNotifier {
 
   final List<ImageData> list = [];
 
+  bool _indexMapIsRelevant = true;
+  Map<ImageData, int> _indexMap = Map();
+  Map<ImageData, int> get indexMap {
+    if (_indexMapIsRelevant) {
+      print("""There was a point in relevancy 😳""");
+      return _indexMap;
+    } else {
+      _indexMap = list.asMap().map((a, b) => MapEntry(b, a));
+      _indexMapIsRelevant = true;
+      return _indexMap;
+    }
+  }
+
   ImageDataList() {
     _imageAddedMessageStreamController =
         StreamController<ImageDataListMessage>();
@@ -52,7 +65,7 @@ class ImageDataList with ChangeNotifier {
             ?.where((x) => x.type == SharedMediaType.IMAGE)
             ?.map((x) => File(x.path));
 
-        if (filtered != null) add(filtered);
+        if (filtered != null) convert(filtered).then(add);
 
         // print("Shared:" + (value?.map((f) => f.path)?.join(",") ?? ""));
       },
@@ -67,39 +80,60 @@ class ImageDataList with ChangeNotifier {
           ?.where((x) => x.type == SharedMediaType.IMAGE)
           ?.map((x) => File(x.path));
 
-      if (filtered != null) add(filtered);
+      if (filtered != null) convert(filtered).then(add);
 
       // print("Shared:" + (value?.map((f) => f.path)?.join(",") ?? ""));
     });
   }
 
-  void add(final Iterable<File> images) async {
-    final converted = images?.whereType<File>()?.map((x) => ImageData(x));
+  Future<Iterable<ImageData>> convert(Iterable<File> files) async {
+    return files?.whereType<File>()?.map((x) => ImageData(x));
+  }
 
-    if (converted?.length == 0) return;
+  Future<bool> add(final Iterable<ImageData> images) async {
+    if (images?.length == 0) return false;
 
-    list.insertAll(0, converted);
+    list.insertAll(0, images);
     notifyListeners();
-
-    print(list);
-    converted.forEach((x) => print(x.file.parent));
 
     _imageAddedMessageStreamController.add(
       ImageDataListMessage(
-        changeAmount: converted.length,
+        changeAmount: images.length,
         undoAction: () async {
-          converted.forEach((x) {
-            list.remove(x);
-            x.delete();
-          });
-          notifyListeners();
+          await remove(images);
           print("""Undone add! ↩""");
-        },
-        ignoreAction: () async {
-          print("""Ignored! 🥳""");
         },
       ),
     );
+
+    return true;
+  }
+
+  Future<bool> remove(final Iterable<ImageData> images) async {
+    if (images?.length == 0) return false;
+
+    images.forEach((x) {
+      list.remove(x);
+    });
+    notifyListeners();
+
+    _imageRemovedMessageStreamController.add(
+      ImageDataListMessage(
+        changeAmount: images.length,
+        undoAction: () async {
+          await add(images);
+          print("""Undone remove! ↩""");
+        },
+        ignoreAction: () async {
+          images.forEach((x) {
+            x.delete();
+          });
+          print("""Comitted deletetion 🥳""");
+        },
+      ),
+    );
+
+    return true;
   }
 
   void moveItem(int from, int to) async {
@@ -120,7 +154,13 @@ class ImageDataList with ChangeNotifier {
       source: ImageSource.gallery,
     );
 
-    add([image]);
+    convert([image]).then(add);
+  }
+
+  @override
+  void notifyListeners() {
+    _indexMapIsRelevant = false;
+    super.notifyListeners();
   }
 
   @override
