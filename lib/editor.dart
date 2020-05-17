@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class EditorPage extends StatefulWidget {
-  @override
-  _EditorPageState createState() => _EditorPageState();
-}
-
-class _EditorPageState extends State<EditorPage> {
+class Main extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(

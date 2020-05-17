@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'logic/images.dart';
 import 'primitive/circular_check_box.dart';
 
-class GalleryPage extends StatelessWidget {
+class Main extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

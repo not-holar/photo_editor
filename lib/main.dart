@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:hsluv/extensions.dart';
 import 'package:provider/provider.dart';
 
-import 'editor.dart';
-import 'gallery.dart';
+import 'editor.dart' as _editor;
+import 'gallery.dart' as _gallery;
 import 'logic/images.dart';
 
 void main() => runApp(App());
@@ -108,8 +108,8 @@ class App extends StatelessWidget {
             child: Column(children: [
               Expanded(
                 child: AppPageSelector(children: [
-                  GalleryPage(),
-                  EditorPage(),
+                  _gallery.Main(),
+                  _editor.Main(),
                 ]),
               ),
               AppNavigationBar(),
