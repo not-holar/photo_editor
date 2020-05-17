@@ -108,7 +108,9 @@ class ImageDataList with ChangeNotifier {
     list.removeAt(from);
 
     print(
-        """🔀 Moved ${item.key} from $from to $to in list of size ${list.length}""");
+      """🔀 Moved ${item.key} from $from to $to"""
+      """ in list of size ${list.length}""",
+    );
 
     notifyListeners();
   }
