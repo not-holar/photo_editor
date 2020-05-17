@@ -129,23 +129,29 @@ class AppNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = context.watch<ValueNotifier<int>>();
 
-    return BottomNavigationBar(
-      onTap: (index) => currentIndex.value = index,
-      currentIndex: currentIndex.value,
-      items: [
-        const BottomNavigationBarItem(
-          icon: const Icon(Icons.photo_library),
-          title: const Text("Gallery"),
-        ),
-        const BottomNavigationBarItem(
-          icon: const Icon(Icons.edit),
-          title: const Text("Editor"),
-        ),
-      ],
-      selectedItemColor: Theme.of(context).accentColor,
-      unselectedItemColor: Theme.of(context).unselectedWidgetColor,
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: Divider.createBorderSide(context)),
+      ),
+      child: BottomNavigationBar(
+        onTap: (index) => currentIndex.value = index,
+        currentIndex: currentIndex.value,
+        items: [
+          const BottomNavigationBarItem(
+            icon: const Icon(Icons.photo_library),
+            title: const Text("Gallery"),
+          ),
+          const BottomNavigationBarItem(
+            icon: const Icon(Icons.edit),
+            title: const Text("Editor"),
+          ),
+        ],
+        selectedItemColor: Theme.of(context).accentColor,
+        unselectedItemColor: Theme.of(context).unselectedWidgetColor,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        elevation: 0,
+      ),
     );
   }
 }

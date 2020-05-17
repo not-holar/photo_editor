@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:provider/provider.dart';
-import 'package:drag_select_grid_view/drag_select_grid_view.dart';
 
 import 'logic/images.dart';
 import 'primitive/circular_check_box.dart';
@@ -62,51 +61,19 @@ void subscribeToSnackbarStreams(BuildContext context) {
 }
 
 class GalleryGrid extends StatelessWidget {
-  GalleryGrid({Key key}) : super(key: key);
-
   static final imageBackgroundColor = Colors.grey.shade400.withOpacity(.5);
+
+  GalleryGrid({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final gridController = context.select(
-      (DragSelectGridViewController x) => x,
-    );
-    if (gridController.selection.amount != 0) gridController.clear();
+    print("""GalleryGrid rebuilt 👷‍♀️""");
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
 
     final imageDataList = context.watch<ImageDataList>();
 
-    // return DragSelectGridView(
-    //   gridController: gridController,
-    //   itemCount: imageDataList.list.length,
-    //   padding: EdgeInsets.only(
-    //     top: 44 + MediaQuery.of(context).viewPadding.top,
-    //     bottom: 50,
-    //     left: 4,
-    //     right: 4,
-    //   ),
-    //   physics: const BouncingScrollPhysics(),
-    //   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-    //     mainAxisSpacing: 4,
-    //     crossAxisSpacing: 4,
-    //     maxCrossAxisExtent: 150,
-    //   ),
-    //   itemBuilder: (_, index, selected) => GalleryImage(
-    //     imageDataList.list[index],
-    //     key: imageDataList.list[index].key,
-    //     maxWidth: 150,
-    //     selected: selected,
-    //     selecting: gridController.selection.isSelecting,
-    //     pixelRatio: devicePixelRatio,
-    //     backgroundColor: imageBackgroundColor,
-    //   ),
-    // );
-
-    final scrollController = ScrollController();
-
     return CustomScrollView(
-      controller: scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
         SliverSafeArea(
@@ -118,8 +85,6 @@ class GalleryGrid extends StatelessWidget {
                   imageDataList.list[index],
                   key: imageDataList.list[index].key,
                   maxWidth: 150,
-                  selected: false,
-                  selecting: gridController.selection.isSelecting,
                   pixelRatio: devicePixelRatio,
                   backgroundColor: imageBackgroundColor,
                 ),
@@ -145,27 +110,30 @@ class GalleryGrid extends StatelessWidget {
 
 class GalleryImage extends StatelessWidget {
   static const curve = Curves.fastOutSlowIn;
-
   static const duration = Duration(milliseconds: 250);
-  final int maxWidth;
-  final ImageData image;
-  final bool selected;
-  final bool selecting;
-  final double pixelRatio;
+
   final Color backgroundColor;
+  final ImageData image;
+  final int maxWidth;
+  final double pixelRatio;
 
   const GalleryImage(
     this.image, {
     Key key,
     this.maxWidth = 150,
-    this.selected = false,
-    this.selecting = false,
     this.pixelRatio = 1,
     this.backgroundColor = Colors.grey,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final selecting = context.select((ValueNotifier<Set<Key>> x) {
+      return x.value.isNotEmpty;
+    });
+    final selected = context.select((ValueNotifier<Set<Key>> x) {
+      return x.value.contains(key);
+    });
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -176,29 +144,39 @@ class GalleryImage extends StatelessWidget {
             duration: duration,
             curve: curve,
             child: Image(
+              filterQuality: FilterQuality.high,
+              alignment: Alignment.center,
+              fit: BoxFit.cover,
               image: ResizeImage.resizeIfNeeded(
                 (maxWidth * pixelRatio).round(),
                 null,
                 FileImage(image.file),
               ),
-              filterQuality: FilterQuality.high,
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
             ),
           ),
         ),
-        AnimatedOpacity(
-          opacity: selecting ? 1.0 : 0.0,
-          duration: duration,
-          curve: curve,
-          child: Container(
-            alignment: Alignment.bottomLeft,
-            decoration: const BoxDecoration(
-              gradient: const LinearGradient(
-                colors: const [Colors.black26, Colors.black12],
+        Material(
+          color: Colors.transparent,
+          elevation: 0,
+          child: InkWell(
+            onTap: () => toggleSelection(context, selected, key),
+            onDoubleTap: selecting ? null : () => print("Open image"), // TODO
+            enableFeedback: true,
+            splashColor: Colors.white10,
+          ),
+        ),
+        IgnorePointer(
+          child: AnimatedOpacity(
+            opacity: selecting ? 1.0 : 0.0,
+            duration: duration,
+            curve: curve,
+            child: Container(
+              alignment: Alignment.bottomLeft,
+              decoration: const BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: const [Colors.black26, Colors.black12],
+                ),
               ),
-            ),
-            child: IgnorePointer(
               child: CircularCheckBox(
                 checkColor: Colors.black,
                 activeColor: Colors.white,
@@ -212,50 +190,18 @@ class GalleryImage extends StatelessWidget {
       ],
     );
   }
-}
 
-class ReorderableGallery extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final query = MediaQuery.of(context);
-    final imageDataList = context.watch<ImageDataList>();
-
-    return ReorderableListView(
-      padding: EdgeInsets.only(
-        top: 44 + query.viewPadding.top,
-        bottom: 50,
-        left: 4,
-        right: 4,
-      ),
-      onReorder: (from, to) => imageDataList.moveItem(from, to),
-      children: [
-        for (final image in imageDataList.list)
-          Card(
-            key: image.key,
-            child: ListTile(
-              leading: AspectRatio(
-                aspectRatio: 1,
-                child: Image.file(
-                  image.file,
-                  filterQuality: FilterQuality.high,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  cacheWidth: (100 * query.devicePixelRatio).round(),
-                ),
-              ),
-              title: Text('Image ${image.key}'),
-              // The child of a Handle can initialize a drag/reorder.
-              // This could for example be an Icon or the whole item itself. You can
-              // use the delay parameter to specify the duration for how long a pointer
-              // must press the child, until it can be dragged.
-              trailing: const Icon(
-                Icons.drag_handle,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-      ],
-    );
+  static void toggleSelection(
+    BuildContext context,
+    bool selected,
+    Key key,
+  ) async {
+    final v = context.read<ValueNotifier<Set<Key>>>();
+    if (selected) {
+      v.value = v.value.difference(Set.of([key]));
+    } else {
+      v.value = v.value.union(Set.of([key]));
+    }
   }
 }
 
@@ -264,11 +210,8 @@ class GalleryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<DragSelectGridViewController>(
-          create: (_) => DragSelectGridViewController(),
-        ),
-        ChangeNotifierProvider<ValueNotifier<int>>(
-          create: (_) => ValueNotifier(0),
+        ChangeNotifierProvider<ValueNotifier<Set<Key>>>(
+          create: (_) => ValueNotifier(Set()),
         ),
       ],
       child: Scaffold(
@@ -276,22 +219,73 @@ class GalleryPage extends StatelessWidget {
         appBar: const TopShadow(),
         body: Builder(builder: (context) {
           subscribeToSnackbarStreams(context);
-
-          return Builder(builder: (context) {
-            return IndexedStack(
-              index: context.watch<ValueNotifier<int>>().value,
-              sizing: StackFit.expand,
-              children: [
-                GalleryGrid(),
-                ReorderableGallery(),
-              ],
-            );
-          });
+          return GalleryGrid();
         }),
         floatingActionButton: FloatingActionButton(
           onPressed: context.select((ImageDataList x) => x.addFromPicker),
           child: const Icon(Icons.more_vert),
           tooltip: 'Expand Gallery Menu',
+        ),
+        bottomNavigationBar: SelectionBar(),
+      ),
+    );
+  }
+}
+
+class SelectionBar extends StatelessWidget {
+  const SelectionBar({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final selecting = context.select((ValueNotifier<Set<Key>> x) {
+      return x.value.isNotEmpty;
+    });
+    return WillPopScope(
+      onWillPop: () async {
+        if (selecting) {
+          context.read<ValueNotifier<Set<Key>>>().value = Set();
+        }
+        return !selecting;
+      },
+      child: Visibility(
+        visible: selecting,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Theme.of(context).bottomAppBarColor.withOpacity(.75),
+            border: Border(top: Divider.createBorderSide(context)),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    context.read<ValueNotifier<Set<Key>>>().value = Set();
+                  },
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25),
+                    child: Builder(builder: (context) {
+                      return Text(
+                        '${context.watch<ValueNotifier<Set<Key>>>().value.length}',
+                        textScaleFactor: 1.3,
+                      );
+                    }),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () {
+                    context.read<ValueNotifier<Set<Key>>>().value = Set();
+                  },
+                ),
+              ],
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+            ),
+          ),
         ),
       ),
     );
