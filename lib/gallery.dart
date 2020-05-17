@@ -9,6 +9,33 @@ import 'package:provider/provider.dart';
 import 'logic/images.dart';
 import 'primitive/circular_check_box.dart';
 
+class GalleryPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ValueNotifier<Set<Key>>>(
+          create: (_) => ValueNotifier(Set()),
+        ),
+      ],
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: const TopShadow(),
+        body: Builder(builder: (context) {
+          subscribeToSnackbarStreams(context);
+          return GalleryGrid();
+        }),
+        floatingActionButton: FloatingActionButton(
+          onPressed: context.select((ImageDataList x) => x.addFromPicker),
+          child: const Icon(Icons.more_vert),
+          tooltip: 'Expand Gallery Menu',
+        ),
+        bottomNavigationBar: SelectionBar(),
+      ),
+    );
+  }
+}
+
 void subscribeToSnackbarStreams(BuildContext context) {
   final showSnackBar = Scaffold.of(context).showSnackBar;
 
@@ -202,33 +229,6 @@ class GalleryImage extends StatelessWidget {
     } else {
       v.value = v.value.union(Set.of([key]));
     }
-  }
-}
-
-class GalleryPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ValueNotifier<Set<Key>>>(
-          create: (_) => ValueNotifier(Set()),
-        ),
-      ],
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: const TopShadow(),
-        body: Builder(builder: (context) {
-          subscribeToSnackbarStreams(context);
-          return GalleryGrid();
-        }),
-        floatingActionButton: FloatingActionButton(
-          onPressed: context.select((ImageDataList x) => x.addFromPicker),
-          child: const Icon(Icons.more_vert),
-          tooltip: 'Expand Gallery Menu',
-        ),
-        bottomNavigationBar: SelectionBar(),
-      ),
-    );
   }
 }
 
