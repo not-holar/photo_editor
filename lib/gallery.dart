@@ -27,8 +27,9 @@ class Main extends StatelessWidget {
           lazy: false,
         ),
         floatingActionButton: FloatingActionButton(
+          // TODO: open menu with gallery and camera (Use animations lib)
           onPressed: context.select((ImageDataList x) => x.addFromPicker),
-          child: const Icon(Icons.more_vert),
+          child: const Icon(Icons.add),
           tooltip: 'Expand Gallery Menu',
         ),
         bottomNavigationBar: SelectionBar(),
