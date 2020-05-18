@@ -49,30 +49,31 @@ class GalleryGrid extends StatelessWidget {
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
 
-    final imageDataList = context.watch<ImageDataList>();
-
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
         SliverSafeArea(
           sliver: SliverPadding(
             padding: EdgeInsets.fromLTRB(4, 44, 4, 100),
-            sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => GalleryImage(
-                  imageDataList.list[index],
-                  maxWidth: 150,
-                  pixelRatio: devicePixelRatio,
-                  backgroundColor: imageBackgroundColor,
+            sliver: Builder(builder: (context) {
+              final imageDataList = context.watch<ImageDataList>();
+              return SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => GalleryImage(
+                    imageDataList.list[index],
+                    maxWidth: 150,
+                    pixelRatio: devicePixelRatio,
+                    backgroundColor: imageBackgroundColor,
+                  ),
+                  childCount: imageDataList.list.length,
                 ),
-                childCount: imageDataList.list.length,
-              ),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
-                maxCrossAxisExtent: 150,
-              ),
-            ),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                  maxCrossAxisExtent: 150,
+                ),
+              );
+            }),
           ),
         ),
       ],
@@ -209,7 +210,7 @@ class SelectionBar extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () async {
+                    onPressed: () {
                       context.read<ValueNotifier<Set<ImageData>>>().value =
                           Set();
                     },
@@ -229,7 +230,7 @@ class SelectionBar extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed: () async {
+                    onPressed: () {
                       context.read<ImageDataList>().remove(
                           context.read<ValueNotifier<Set<ImageData>>>().value);
                     },
@@ -296,6 +297,8 @@ void subscribeToSnackbarStreams(BuildContext context) {
     (message) async {
       final reason = await showSnackBar(SnackBar(
         // behavior: SnackBarBehavior.floating,
+
+        // TODO: make correct plurals
         content: Text('Added ${message.changeAmount} images'),
         action: message.undoAction == null
             ? null

@@ -84,10 +84,18 @@ class ImageDataList with ChangeNotifier {
 
       // print("Shared:" + (value?.map((f) => f.path)?.join(",") ?? ""));
     });
+
+    Future(() {
+      ImagePicker.retrieveLostData().then((x) {
+        return convert([x.file]);
+      }).then(add);
+    }).catchError((e) {
+      print("Restore error: ${e.error}");
+    });
   }
 
-  Future<Iterable<ImageData>> convert(Iterable<File> files) async {
-    return files?.whereType<File>()?.map((x) => ImageData(x));
+  Future<List<ImageData>> convert(Iterable<File> files) async {
+    return files?.whereType<File>()?.map((x) => ImageData(x))?.toList();
   }
 
   Future<bool> add(final Iterable<ImageData> images) async {
