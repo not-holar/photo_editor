@@ -89,6 +89,7 @@ class App extends StatelessWidget {
       title: 'Flutter Demo',
       theme: theme,
       darkTheme: darkTheme,
+      debugShowCheckedModeBanner: false,
       home: Builder(builder: (context) {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
@@ -120,7 +121,6 @@ class App extends StatelessWidget {
           ),
         );
       }),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -139,6 +139,11 @@ class AppNavigationBar extends StatelessWidget {
       child: BottomNavigationBar(
         onTap: (index) => currentIndex.value = index,
         currentIndex: currentIndex.value,
+        selectedItemColor: Theme.of(context).accentColor,
+        unselectedItemColor: Theme.of(context).unselectedWidgetColor,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        elevation: 0,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.photo_library),
@@ -149,11 +154,6 @@ class AppNavigationBar extends StatelessWidget {
             title: Text("Editor"),
           ),
         ],
-        selectedItemColor: Theme.of(context).accentColor,
-        unselectedItemColor: Theme.of(context).unselectedWidgetColor,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        elevation: 0,
       ),
     );
   }

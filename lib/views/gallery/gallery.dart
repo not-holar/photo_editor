@@ -20,8 +20,8 @@ class Main extends StatelessWidget {
         ),
       ],
       child: Scaffold(
-        extendBodyBehindAppBar: true,
         appBar: const TopShadow(),
+        extendBodyBehindAppBar: true,
         body: Provider<void>(
           create: subscribeToSnackbarStreams,
           lazy: false,
@@ -61,6 +61,11 @@ class GalleryGrid extends StatelessWidget {
             sliver: Builder(builder: (context) {
               final imageDataList = context.watch<ImageDataList>();
               return SliverGrid(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                  maxCrossAxisExtent: 150,
+                ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => GalleryImage(
                     imageDataList.list[index],
@@ -69,11 +74,6 @@ class GalleryGrid extends StatelessWidget {
                     backgroundColor: _imageBackgroundColor,
                   ),
                   childCount: imageDataList.list.length,
-                ),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
-                  maxCrossAxisExtent: 150,
                 ),
               );
             }),
