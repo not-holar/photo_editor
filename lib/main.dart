@@ -12,11 +12,14 @@ import 'views/gallery/gallery.dart' as _gallery;
 void main() => runApp(App());
 
 class App extends StatelessWidget {
-  static ThemeData get darkTheme => ThemeData(
-        brightness: Brightness.dark,
+  static ThemeData get baseTheme => ThemeData(
         splashFactory: InkRipple.splashFactory,
         highlightColor: Colors.transparent,
         primarySwatch: Colors.grey,
+      );
+
+  static ThemeData get darkTheme => baseTheme.copyWith(
+        brightness: Brightness.dark,
         accentColor: hsluvToRGBColor(const [75, 10, 90]),
         scaffoldBackgroundColor: Colors.black,
         cardColor: hsluvToRGBColor(const [75, 0, 6]),
@@ -45,12 +48,8 @@ class App extends StatelessWidget {
         canvasColor: hsluvToRGBColor(const [75, 0, 10]),
       );
 
-  static ThemeData get theme => ThemeData(
+  static ThemeData get lightTheme => baseTheme.copyWith(
         brightness: Brightness.light,
-        primaryColorBrightness: Brightness.light,
-        splashFactory: InkRipple.splashFactory,
-        highlightColor: Colors.transparent,
-        primarySwatch: Colors.grey,
         accentColor: hsluvToRGBColor(const [75, 10, 50]),
         scaffoldBackgroundColor: hsluvToRGBColor(const [75, 0, 95]),
         unselectedWidgetColor: Colors.black26,
@@ -87,7 +86,7 @@ class App extends StatelessWidget {
 
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: theme,
+      theme: lightTheme,
       darkTheme: darkTheme,
       debugShowCheckedModeBanner: false,
       home: Builder(builder: (context) {
