@@ -132,8 +132,7 @@ class GalleryImage extends StatelessWidget {
           ),
         ),
         Material(
-          color: Colors.transparent,
-          elevation: 0,
+          type: MaterialType.transparency,
           child: InkWell(
             onTap: () => toggleSelection(context, image, wasSelected: selected),
             onDoubleTap: selecting ? null : () => print("Open image"), // TODO
