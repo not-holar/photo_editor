@@ -5,6 +5,11 @@
 // Modified by Mash Ibtesum
 // Modified by Lorenzo Calisti
 
+// ignore_for_file: lines_longer_than_80_chars
+// ignore_for_file: omit_local_variable_types
+// ignore_for_file: avoid_types_on_closure_parameters
+// ignore_for_file: curly_braces_in_flow_control_structures
+
 library circular_check_box;
 
 import 'package:flutter/material.dart';

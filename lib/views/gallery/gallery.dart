@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:provider/provider.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+// import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../logic/images.dart';
 import '../../basic_widgets/circular_check_box.dart';
+import '../../logic/images.dart';
 
 class Main extends StatelessWidget {
   @override
@@ -16,7 +16,7 @@ class Main extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ValueNotifier<Set<ImageData>>>(
-          create: (_) => ValueNotifier(Set()),
+          create: (_) => ValueNotifier(<ImageData>{}),
         ),
       ],
       child: Scaffold(
@@ -29,7 +29,8 @@ class Main extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton(
           // TODO: open menu with gallery and camera (Use animations lib)
-          onPressed: context.select((ImageDataList x) => x.addFromPicker),
+          onPressed:
+              context.select<ImageDataList, Function>((x) => x.addFromPicker),
           child: const Icon(Icons.add),
           tooltip: 'Expand Gallery Menu',
         ),
@@ -40,7 +41,8 @@ class Main extends StatelessWidget {
 }
 
 class GalleryGrid extends StatelessWidget {
-  static final imageBackgroundColor = Colors.grey.shade400.withOpacity(.5);
+  static final Color _imageBackgroundColor =
+      Colors.grey.shade400.withOpacity(.5);
 
   GalleryGrid({Key key}) : super(key: key);
 
@@ -64,7 +66,7 @@ class GalleryGrid extends StatelessWidget {
                     imageDataList.list[index],
                     maxWidth: 150,
                     pixelRatio: devicePixelRatio,
-                    backgroundColor: imageBackgroundColor,
+                    backgroundColor: _imageBackgroundColor,
                   ),
                   childCount: imageDataList.list.length,
                 ),
@@ -101,12 +103,12 @@ class GalleryImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context.select((ValueNotifier<Set<ImageData>> x) {
-      return x.value.isNotEmpty;
-    });
-    final selected = context.select((ValueNotifier<Set<ImageData>> x) {
-      return x.value.contains(image);
-    });
+    final selecting = context.select<ValueNotifier<Set<ImageData>>, bool>(
+      (x) => x.value.isNotEmpty,
+    );
+    final selected = context.select<ValueNotifier<Set<ImageData>>, bool>(
+      (x) => x.value.contains(image),
+    );
 
     return Stack(
       fit: StackFit.expand,
@@ -133,7 +135,7 @@ class GalleryImage extends StatelessWidget {
           color: Colors.transparent,
           elevation: 0,
           child: InkWell(
-            onTap: () => toggleSelection(context, selected, image),
+            onTap: () => toggleSelection(context, image, wasSelected: selected),
             onDoubleTap: selecting ? null : () => print("Open image"), // TODO
             enableFeedback: true,
             splashColor: Colors.white10,
@@ -147,8 +149,8 @@ class GalleryImage extends StatelessWidget {
             child: Container(
               alignment: Alignment.bottomLeft,
               decoration: const BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: const [Colors.black26, Colors.black12],
+                gradient: LinearGradient(
+                  colors: [Colors.black26, Colors.black12],
                 ),
               ),
               child: CircularCheckBox(
@@ -167,14 +169,14 @@ class GalleryImage extends StatelessWidget {
 
   static void toggleSelection(
     BuildContext context,
-    bool selected,
-    ImageData image,
-  ) async {
+    ImageData image, {
+    bool wasSelected,
+  }) async {
     final v = context.read<ValueNotifier<Set<ImageData>>>();
-    if (selected) {
-      v.value = v.value.difference(Set.of([image]));
+    if (wasSelected) {
+      v.value = v.value.difference({image});
     } else {
-      v.value = v.value.union(Set.of([image]));
+      v.value = v.value.union({image});
     }
   }
 }
@@ -184,13 +186,12 @@ class SelectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context.select((ValueNotifier<Set<ImageData>> x) {
-      return x.value.isNotEmpty;
-    });
+    final selecting = context
+        .select<ValueNotifier<Set<ImageData>>, bool>((x) => x.value.isNotEmpty);
     return WillPopScope(
       onWillPop: () async {
         if (selecting) {
-          context.read<ValueNotifier<Set<ImageData>>>().value = Set();
+          context.read<ValueNotifier<Set<ImageData>>>().value = {};
         }
         return !selecting;
       },
@@ -212,8 +213,7 @@ class SelectionBar extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.clear, size: 20),
                     onPressed: () {
-                      context.read<ValueNotifier<Set<ImageData>>>().value =
-                          Set();
+                      context.read<ValueNotifier<Set<ImageData>>>().value = {};
                     },
                   ),
                   Expanded(
@@ -221,9 +221,11 @@ class SelectionBar extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 25),
                       child: Builder(builder: (context) {
                         return Text(
-                          context.select((ValueNotifier<Set<ImageData>> x) {
-                            return x.value.length;
-                          }).toString(),
+                          context
+                              .select<ValueNotifier<Set<ImageData>>, int>(
+                                (x) => x.value.length,
+                              )
+                              .toString(),
                           textScaleFactor: 1.1,
                         );
                       }),
@@ -255,9 +257,9 @@ class TopShadow extends StatelessWidget implements PreferredSizeWidget {
         super();
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(builder: builder);
+  Widget build(BuildContext context) => LayoutBuilder(builder: _builder);
 
-  Widget builder(context, constraints) {
+  Widget _builder(BuildContext context, BoxConstraints constraints) {
     return Visibility(
       visible: constraints.maxHeight != 0,
       child: IgnorePointer(

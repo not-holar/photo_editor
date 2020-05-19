@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-class ImageData with ChangeNotifier {
+class ImageData extends ChangeNotifier {
   Key key;
   File file;
 
@@ -23,7 +23,7 @@ class ImageData with ChangeNotifier {
   }
 }
 
-class ImageDataList with ChangeNotifier {
+class ImageDataList extends ChangeNotifier {
   StreamSubscription _intentDataStreamSubscription;
 
   StreamController<ImageDataListMessage> _imageAddedMessageStreamController;
@@ -36,7 +36,7 @@ class ImageDataList with ChangeNotifier {
   final List<ImageData> list = [];
 
   bool _indexMapIsRelevant = true;
-  Map<ImageData, int> _indexMap = Map();
+  Map<ImageData, int> _indexMap = {};
   Map<ImageData, int> get indexMap {
     if (_indexMapIsRelevant) {
       print("""There was a point in relevancy 😳""");
@@ -57,10 +57,12 @@ class ImageDataList with ChangeNotifier {
     imageAddedMessageStream = _imageAddedMessageStreamController.stream;
     imageRemovedMessageStream = _imageRemovedMessageStreamController.stream;
 
-    // For sharing images coming from outside the app while the app is in the memory
+    // For sharing images coming from outside
+    // the app while the app is in memory
+
     _intentDataStreamSubscription =
         ReceiveSharingIntent.getMediaStream().listen(
-      (List<SharedMediaFile> value) {
+      (value) {
         final filtered = value
             ?.where((x) => x.type == SharedMediaType.IMAGE)
             ?.map((x) => File(x.path));
@@ -75,7 +77,7 @@ class ImageDataList with ChangeNotifier {
     );
 
     // For sharing images coming from outside the app while the app is closed
-    ReceiveSharingIntent.getInitialMedia().then((List<SharedMediaFile> value) {
+    ReceiveSharingIntent.getInitialMedia().then((value) {
       final filtered = value
           ?.where((x) => x.type == SharedMediaType.IMAGE)
           ?.map((x) => File(x.path));
@@ -120,9 +122,9 @@ class ImageDataList with ChangeNotifier {
   Future<bool> remove(final Iterable<ImageData> images) async {
     if (images?.length == 0) return false;
 
-    images.forEach((x) {
+    for (final x in images) {
       list.remove(x);
-    });
+    }
     notifyListeners();
 
     _imageRemovedMessageStreamController.add(
@@ -133,9 +135,9 @@ class ImageDataList with ChangeNotifier {
           print("""Undone remove! ↩""");
         },
         ignoreAction: () async {
-          images.forEach((x) {
+          for (final x in images) {
             x.delete();
-          });
+          }
           print("""Comitted deletetion 🥳""");
         },
       ),

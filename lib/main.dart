@@ -3,16 +3,16 @@ import 'package:flutter/services.dart';
 
 import 'package:hsluv/extensions.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+// import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'logic/images.dart';
 import 'views/editor/editor.dart' as _editor;
 import 'views/gallery/gallery.dart' as _gallery;
-import 'logic/images.dart';
 
 void main() => runApp(App());
 
 class App extends StatelessWidget {
-  static get darkTheme => ThemeData(
+  static ThemeData get darkTheme => ThemeData(
         brightness: Brightness.dark,
         splashFactory: InkRipple.splashFactory,
         highlightColor: Colors.transparent,
@@ -45,7 +45,7 @@ class App extends StatelessWidget {
         canvasColor: hsluvToRGBColor(const [75, 0, 10]),
       );
 
-  static get theme => ThemeData(
+  static ThemeData get theme => ThemeData(
         brightness: Brightness.light,
         primaryColorBrightness: Brightness.light,
         splashFactory: InkRipple.splashFactory,
@@ -141,12 +141,12 @@ class AppNavigationBar extends StatelessWidget {
         currentIndex: currentIndex.value,
         items: [
           const BottomNavigationBarItem(
-            icon: const Icon(Icons.photo_library),
-            title: const Text("Gallery"),
+            icon: Icon(Icons.photo_library),
+            title: Text("Gallery"),
           ),
           const BottomNavigationBarItem(
-            icon: const Icon(Icons.edit),
-            title: const Text("Editor"),
+            icon: Icon(Icons.edit),
+            title: Text("Editor"),
           ),
         ],
         selectedItemColor: Theme.of(context).accentColor,
