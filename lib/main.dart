@@ -38,7 +38,7 @@ class App extends StatelessWidget {
         snackBarTheme: SnackBarThemeData(
           backgroundColor: hsluvToRGBColor(const [75, 10, 80]),
           actionTextColor: Colors.black,
-          contentTextStyle: TextStyle(
+          contentTextStyle: const TextStyle(
             color: Colors.black,
           ),
         ),
@@ -60,7 +60,7 @@ class App extends StatelessWidget {
           primary: hsluvToRGBColor(const [75, 10, 50]),
           primaryVariant: hsluvToRGBColor(const [75, 10, 40]),
         ),
-        bottomSheetTheme: BottomSheetThemeData(
+        bottomSheetTheme: const BottomSheetThemeData(
           backgroundColor: Colors.white,
           elevation: 0,
         ),
@@ -71,7 +71,7 @@ class App extends StatelessWidget {
         snackBarTheme: SnackBarThemeData(
           backgroundColor: hsluvToRGBColor(const [75, 10, 50]),
           actionTextColor: Colors.white,
-          contentTextStyle: TextStyle(
+          contentTextStyle: const TextStyle(
             color: Colors.white,
           ),
         ),
@@ -115,7 +115,7 @@ class App extends StatelessWidget {
                   _editor.Main(),
                 ]),
               ),
-              AppNavigationBar(),
+              const AppNavigationBar(),
             ]),
           ),
         );
@@ -139,12 +139,12 @@ class AppNavigationBar extends StatelessWidget {
       child: BottomNavigationBar(
         onTap: (index) => currentIndex.value = index,
         currentIndex: currentIndex.value,
-        items: [
-          const BottomNavigationBarItem(
+        items: const [
+          BottomNavigationBarItem(
             icon: Icon(Icons.photo_library),
             title: Text("Gallery"),
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.edit),
             title: Text("Editor"),
           ),

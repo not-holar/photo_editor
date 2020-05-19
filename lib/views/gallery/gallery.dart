@@ -23,18 +23,18 @@ class Main extends StatelessWidget {
         extendBodyBehindAppBar: true,
         appBar: const TopShadow(),
         body: Provider<void>(
-          child: GalleryGrid(),
           create: subscribeToSnackbarStreams,
           lazy: false,
+          child: const GalleryGrid(),
         ),
         floatingActionButton: FloatingActionButton(
           // TODO: open menu with gallery and camera (Use animations lib)
-          onPressed:
-              context.select<ImageDataList, Function>((x) => x.addFromPicker),
-          child: const Icon(Icons.add),
+          onPressed: context
+              .select<ImageDataList, void Function()>((x) => x.addFromPicker),
           tooltip: 'Expand Gallery Menu',
+          child: const Icon(Icons.add),
         ),
-        bottomNavigationBar: SelectionBar(),
+        bottomNavigationBar: const SelectionBar(),
       ),
     );
   }
@@ -44,7 +44,7 @@ class GalleryGrid extends StatelessWidget {
   static final Color _imageBackgroundColor =
       Colors.grey.shade400.withOpacity(.5);
 
-  GalleryGrid({Key key}) : super(key: key);
+  const GalleryGrid({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +57,7 @@ class GalleryGrid extends StatelessWidget {
       slivers: [
         SliverSafeArea(
           sliver: SliverPadding(
-            padding: EdgeInsets.fromLTRB(4, 44, 4, 100),
+            padding: const EdgeInsets.fromLTRB(4, 44, 4, 100),
             sliver: Builder(builder: (context) {
               final imageDataList = context.watch<ImageDataList>();
               return SliverGrid(
@@ -96,7 +96,7 @@ class GalleryImage extends StatelessWidget {
   const GalleryImage(
     this.image, {
     Key key,
-    this.maxWidth = 150,
+    this.maxWidth = 50,
     this.pixelRatio = 1,
     this.backgroundColor = Colors.grey,
   }) : super(key: key);
@@ -167,7 +167,7 @@ class GalleryImage extends StatelessWidget {
     );
   }
 
-  static void toggleSelection(
+  static Future<void> toggleSelection(
     BuildContext context,
     ImageData image, {
     bool wasSelected,
@@ -250,11 +250,9 @@ class SelectionBar extends StatelessWidget {
 
 class TopShadow extends StatelessWidget implements PreferredSizeWidget {
   @override
-  final Size preferredSize;
+  Size get preferredSize => const Size(0, 0);
 
-  const TopShadow()
-      : preferredSize = const Size(0, 0),
-        super();
+  const TopShadow() : super();
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: _builder);

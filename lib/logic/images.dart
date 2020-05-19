@@ -12,7 +12,7 @@ class ImageData extends ChangeNotifier {
 
   ImageData(this.file) : key = Key(file.hashCode.toString());
 
-  void delete() async {
+  Future<void> delete() async {
     // file.parent;
     dispose();
   }
@@ -71,7 +71,7 @@ class ImageDataList extends ChangeNotifier {
 
         // print("Shared:" + (value?.map((f) => f.path)?.join(",") ?? ""));
       },
-      onError: (err) {
+      onError: (dynamic err) {
         print("getIntentDataStream error: $err");
       },
     );
@@ -91,7 +91,7 @@ class ImageDataList extends ChangeNotifier {
       ImagePicker.retrieveLostData().then((x) {
         return convert([x.file]);
       }).then(add);
-    }).catchError((e) {
+    }).catchError((dynamic e) {
       print("Restore error: ${e.error}");
     });
   }
@@ -101,7 +101,7 @@ class ImageDataList extends ChangeNotifier {
   }
 
   Future<bool> add(final Iterable<ImageData> images) async {
-    if (images?.length == 0) return false;
+    if (images == null || images.isEmpty) return false;
 
     list.insertAll(0, images);
     notifyListeners();
@@ -120,7 +120,7 @@ class ImageDataList extends ChangeNotifier {
   }
 
   Future<bool> remove(final Iterable<ImageData> images) async {
-    if (images?.length == 0) return false;
+    if (images == null || images.isEmpty) return false;
 
     for (final x in images) {
       list.remove(x);
@@ -146,7 +146,7 @@ class ImageDataList extends ChangeNotifier {
     return true;
   }
 
-  void moveItem(int from, int to) async {
+  Future<void> moveItem(int from, int to) async {
     final item = list[from];
     list.insert(to, item);
     list.removeAt(from);
@@ -159,7 +159,7 @@ class ImageDataList extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addFromPicker() async {
+  Future<void> addFromPicker() async {
     final image = await ImagePicker.pickImage(
       source: ImageSource.gallery,
     );
