@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 
 import 'package:hsluv/extensions.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'editor.dart' as _editor;
-import 'gallery.dart' as _gallery;
+import 'views/editor/editor.dart' as _editor;
+import 'views/gallery/gallery.dart' as _gallery;
 import 'logic/images.dart';
 
 void main() => runApp(App());

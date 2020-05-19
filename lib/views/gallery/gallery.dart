@@ -5,9 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'logic/images.dart';
-import 'primitive/circular_check_box.dart';
+import '../../logic/images.dart';
+import '../../basic_widgets/circular_check_box.dart';
 
 class Main extends StatelessWidget {
   @override
