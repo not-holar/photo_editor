@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 
 import 'package:hsluv/extensions.dart';
 import 'package:provider/provider.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'logic/images.dart';
+import 'logic/app_bloc.dart';
 import 'views/editor/editor.dart' as _editor;
 import 'views/gallery/gallery.dart' as _gallery;
 
@@ -101,11 +100,11 @@ class App extends StatelessWidget {
           ),
           child: MultiProvider(
             providers: [
-              ChangeNotifierProvider<ValueNotifier<int>>(
+              ChangeNotifierProvider(
                 create: (context) => ValueNotifier<int>(0),
               ),
-              ChangeNotifierProvider<ImageDataList>(
-                create: (context) => ImageDataList(),
+              Provider(
+                create: (context) => AppBloc(),
               ),
             ],
             child: Column(children: [
