@@ -1,25 +1,27 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_stream_listener/flutter_stream_listener.dart';
 
 import 'package:provider/provider.dart';
 
-import 'package:flutter_hello_world/logic/image_list/image_list_state.dart';
 import 'package:flutter_hello_world/basic_widgets/circular_check_box.dart';
-import 'package:flutter_hello_world/logic/app_bloc.dart';
-import 'package:flutter_hello_world/logic/image/image_bloc.dart';
-import 'package:flutter_hello_world/logic/image_list/image_list_bloc.dart';
+import 'package:flutter_hello_world/logic/backend.dart';
 
 class Main extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final backend = context.watch<Backend>();
+
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<ValueNotifier<Set<ImageBloc>>>(
-          create: (_) => ValueNotifier(<ImageBloc>{}),
+        ChangeNotifierProvider(
+          create: (_) => backend.galleryImages,
+        ),
+        ChangeNotifierProvider<ValueNotifier<Set<int>>>(
+          create: (_) => ValueNotifier(<int>{}),
         ),
       ],
       child: Scaffold(
@@ -30,7 +32,7 @@ class Main extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton(
           // TODO: open menu with gallery and camera (Use animations lib)
-          onPressed: () => context.read<AppBloc>().addFromPicker.add(null),
+          onPressed: backend.addFromPicker,
           tooltip: 'Expand Gallery Menu',
           child: const Icon(Icons.add),
         ),
@@ -51,41 +53,34 @@ class GalleryGrid extends StatelessWidget {
     print("""GalleryGrid rebuilt 👷‍♀️""");
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final galleryImages = context.watch<ValueNotifier<List<File>>>().value;
 
-    return StreamBuilder<ImageListState>(
-      stream: context.watch<AppBloc>().imageListStream,
-      builder: (context, snapshot) {
-        if (snapshot.data == null) {
-          return const CircularProgressIndicator();
-        }
-
-        return CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverSafeArea(
-              sliver: SliverPadding(
-                padding: const EdgeInsets.fromLTRB(4, 44, 4, 100),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
-                    maxCrossAxisExtent: 150,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => GalleryImage(
-                      snapshot.data.list[index],
-                      maxWidth: 150,
-                      pixelRatio: devicePixelRatio,
-                      backgroundColor: _imageBackgroundColor,
-                    ),
-                    childCount: snapshot.data.list.length,
-                  ),
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverSafeArea(
+          sliver: SliverPadding(
+            padding: const EdgeInsets.fromLTRB(4, 44, 4, 100),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+                maxCrossAxisExtent: 150,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => GalleryImage(
+                  galleryImages[index],
+                  index: index,
+                  maxWidth: 150,
+                  pixelRatio: devicePixelRatio,
+                  backgroundColor: _imageBackgroundColor,
                 ),
+                childCount: galleryImages.length,
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -95,13 +90,15 @@ class GalleryImage extends StatelessWidget {
   static const duration = Duration(milliseconds: 250);
 
   final Color backgroundColor;
-  final ImageBloc image;
+  final File image;
+  final int index;
   final int maxWidth;
   final double pixelRatio;
 
   const GalleryImage(
     this.image, {
     Key key,
+    this.index,
     this.maxWidth = 50,
     this.pixelRatio = 1,
     this.backgroundColor = Colors.grey,
@@ -109,11 +106,11 @@ class GalleryImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context.select<ValueNotifier<Set<ImageBloc>>, bool>(
+    final selecting = context.select<ValueNotifier<Set<int>>, bool>(
       (x) => x.value.isNotEmpty,
     );
-    final selected = context.select<ValueNotifier<Set<ImageBloc>>, bool>(
-      (x) => x.value.contains(image),
+    final selected = context.select<ValueNotifier<Set<int>>, bool>(
+      (x) => x.value.contains(index),
     );
 
     return Stack(
@@ -132,7 +129,7 @@ class GalleryImage extends StatelessWidget {
               image: ResizeImage.resizeIfNeeded(
                 (maxWidth * pixelRatio).round(),
                 null,
-                FileImage(image.state.file),
+                FileImage(image),
               ),
             ),
           ),
@@ -140,7 +137,7 @@ class GalleryImage extends StatelessWidget {
         Material(
           type: MaterialType.transparency,
           child: InkWell(
-            onTap: () => toggleSelection(context, image, wasSelected: selected),
+            onTap: () => toggleSelection(context, index, wasSelected: selected),
             onDoubleTap: selecting ? null : () => print("Open image"), // TODO
             enableFeedback: true,
             splashColor: Colors.white10,
@@ -174,14 +171,14 @@ class GalleryImage extends StatelessWidget {
 
   static Future<void> toggleSelection(
     BuildContext context,
-    ImageBloc image, {
+    int index, {
     bool wasSelected,
   }) async {
-    final v = context.read<ValueNotifier<Set<ImageBloc>>>();
+    final v = context.read<ValueNotifier<Set<int>>>();
     if (wasSelected) {
-      v.value = v.value.difference(<ImageBloc>{image});
+      v.value = v.value.difference(<int>{index});
     } else {
-      v.value = v.value.union(<ImageBloc>{image});
+      v.value = v.value.union(<int>{index});
     }
   }
 }
@@ -191,12 +188,14 @@ class SelectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context
-        .select<ValueNotifier<Set<ImageBloc>>, bool>((x) => x.value.isNotEmpty);
+    final selecting = context.select<ValueNotifier<Set<int>>, bool>(
+      (x) => x.value.isNotEmpty,
+    );
+
     return WillPopScope(
       onWillPop: () async {
         if (selecting) {
-          context.read<ValueNotifier<Set<ImageBloc>>>().value = {};
+          context.read<ValueNotifier<Set<int>>>().value = {};
         }
         return !selecting;
       },
@@ -218,7 +217,7 @@ class SelectionBar extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.clear, size: 20),
                     onPressed: () {
-                      context.read<ValueNotifier<Set<ImageBloc>>>().value = {};
+                      context.read<ValueNotifier<Set<int>>>().value = {};
                     },
                   ),
                   Expanded(
@@ -227,7 +226,7 @@ class SelectionBar extends StatelessWidget {
                       child: Builder(builder: (context) {
                         return Text(
                           context
-                              .select<ValueNotifier<Set<ImageBloc>>, int>(
+                              .select<ValueNotifier<Set<int>>, int>(
                                 (x) => x.value.length,
                               )
                               .toString(),
@@ -238,11 +237,7 @@ class SelectionBar extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed: () {
-                      // TODO: fix selection deleting
-                      //   context.read<ImageListBloc>().remove(
-                      //       context.read<ValueNotifier<Set<ImageData>>>().value);
-                    },
+                    onPressed: () => context.read<Backend>().deleteSelection(),
                   ),
                 ],
               ),
@@ -299,69 +294,64 @@ class SnackbarListener extends StatelessWidget {
   const SnackbarListener({Key key, this.child}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final showSnackBar = Scaffold.of(context).showSnackBar;
-    final appBloc = context.watch<AppBloc>();
+  Widget build(BuildContext context) => child;
+  // {
+  // final showSnackBar = Scaffold.of(context).showSnackBar;
+  // final backend = context.watch<Backend>();
+  //
+  //   return StreamListener(
+  //     stream: backend.imagesAddedMessageStream,
+  //     onData: makeMessageProcessor(
+  //       showSnackBar,
+  //       addedMessageSnackbarBuilder,
+  //     ),
+  //     child: StreamListener(
+  //       stream: backend.imagesRemovedMessageStream,
+  //       onData: makeMessageProcessor(
+  //         showSnackBar,
+  //         removedMessageSnackbarBuilder,
+  //       ),
+  //       child: child,
+  //     ),
+  //   );
+  // }
 
-    return StreamListener(
-      stream: appBloc.imagesAddedMessageStream,
-      onData: makeMessageProcessor(
-        showSnackBar,
-        addedMessageSnackbarBuilder,
-      ),
-      child: StreamListener(
-        stream: appBloc.imagesRemovedMessageStream,
-        onData: makeMessageProcessor(
-          showSnackBar,
-          removedMessageSnackbarBuilder,
-        ),
-        child: child,
-      ),
-    );
-  }
+  // SnackBar addedMessageSnackbarBuilder(ImageListMessage message) {
+  //   return SnackBar(
+  //     // TODO: make correct plurals
+  //     content: Text('Added ${message.changeAmount} images'),
+  //     action: SnackBarAction(
+  //       onPressed: message.undoAction,
+  //       label: "UNDO",
+  //     ),
+  //   );
+  // }
 
-  SnackBar addedMessageSnackbarBuilder(ImageListMessage message) {
-    return SnackBar(
-      // TODO: make correct plurals
-      content: Text('Added ${message.changeAmount} images'),
-      action: SnackBarAction(
-        onPressed: message.undoAction,
-        label: "UNDO",
-      ),
-    );
-  }
+  // SnackBar removedMessageSnackbarBuilder(ImageListMessage message) {
+  //   return SnackBar(
+  //     // behavior: SnackBarBehavior.floating,
+  //     content: Text(
+  //       'Removed ${message.changeAmount} images',
+  //       style: const TextStyle(
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //     action: SnackBarAction(
+  //       onPressed: message.undoAction,
+  //       label: "UNDO",
+  //       textColor: Colors.white,
+  //     ),
+  //     backgroundColor: Colors.redAccent,
+  //   );
+  // }
 
-  SnackBar removedMessageSnackbarBuilder(ImageListMessage message) {
-    return SnackBar(
-      // behavior: SnackBarBehavior.floating,
-      content: Text(
-        'Removed ${message.changeAmount} images',
-        style: TextStyle(
-          color: Colors.white,
-        ),
-      ),
-      action: SnackBarAction(
-        onPressed: message.undoAction,
-        label: "UNDO",
-        textColor: Colors.white,
-      ),
-      backgroundColor: Colors.redAccent,
-    );
-  }
-
-  Null Function(ImageListMessage) makeMessageProcessor(
-    ScaffoldFeatureController<SnackBar, SnackBarClosedReason> Function(SnackBar)
-        showSnackBar,
-    SnackBar Function(ImageListMessage) snackbarBuilder,
-  ) {
-    return (ImageListMessage message) {
-      showSnackBar(snackbarBuilder(message)).closed.then(
-        (reason) {
-          if (reason != SnackBarClosedReason.action) {
-            message?.ignoreAction?.call();
-          }
-        },
-      );
-    };
-  }
+  // Null Function(ImageListMessage) makeMessageProcessor(
+  //   ScaffoldFeatureController<SnackBar, SnackBarClosedReason> Function(SnackBar)
+  //       showSnackBar,
+  //   SnackBar Function(ImageListMessage) snackbarBuilder,
+  // ) {
+  //   return (ImageListMessage message) {
+  //     showSnackBar(snackbarBuilder(message));
+  //   };
+  // }
 }

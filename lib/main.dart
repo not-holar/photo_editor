@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:hsluv/extensions.dart';
 import 'package:provider/provider.dart';
 
-import 'logic/app_bloc.dart';
+import 'logic/backend.dart';
 import 'views/editor/editor.dart' as _editor;
 import 'views/gallery/gallery.dart' as _gallery;
 
@@ -101,10 +101,12 @@ class App extends StatelessWidget {
           child: MultiProvider(
             providers: [
               ChangeNotifierProvider(
-                create: (context) => ValueNotifier<int>(0),
+                create: (_) => ValueNotifier<int>(0),
               ),
               Provider(
-                create: (context) => AppBloc(),
+                create: (_) => Backend(),
+                dispose: (_, Backend x) => x.dispose(),
+                lazy: false,
               ),
             ],
             child: Column(children: [

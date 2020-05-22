@@ -70,12 +70,6 @@ class ImageListBloc {
           add.add(images);
           print("""Undone remove! ↩""");
         },
-        ignoreAction: () async {
-          for (final x in images) {
-            x.delete.add(null);
-          }
-          print("""Comitted deletetion 🥳""");
-        },
       ),
     );
   }
@@ -98,11 +92,9 @@ class ImageListMessage {
   final int changeAmount;
 
   final void Function() undoAction;
-  final void Function() ignoreAction;
 
   ImageListMessage({
     this.changeAmount,
     this.undoAction,
-    this.ignoreAction,
   });
 }
