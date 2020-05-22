@@ -19,6 +19,9 @@ class Main extends StatelessWidget {
 
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<ValueNotifier<List<MapEntry<int, File>>>>(
+          create: (_) => backend.galleryImages,
+        ),
         ChangeNotifierProvider<Selection>(
           create: (_) => backend.selection,
         ),
@@ -53,8 +56,7 @@ class GalleryGrid extends StatelessWidget {
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
 
-    return ValueListenableBuilder<List<MapEntry<int, File>>>(
-      valueListenable: context.watch<Backend>().galleryImages,
+    return Consumer<ValueNotifier<List<MapEntry<int, File>>>>(
       builder: (context, list, _) => Consumer<Selection>(
         builder: (_, selection, __) => CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -73,12 +75,13 @@ class GalleryGrid extends StatelessWidget {
                       maxWidth: 150,
                       pixelRatio: devicePixelRatio,
                       backgroundColor: _imageBackgroundColor,
-                      image: list[index].value,
-                      toggleSelection: () => selection.toggle(list[index].key),
+                      image: list.value[index].value,
+                      toggleSelection: () =>
+                          selection.toggle(list.value[index].key),
                       selecting: selection.selecting,
-                      selected: selection.has(list[index].key),
+                      selected: selection.has(list.value[index].key),
                     ),
-                    childCount: list.length,
+                    childCount: list.value.length,
                   ),
                 ),
               ),

@@ -64,9 +64,11 @@ class Backend {
   // Backend Public Methods
 
   void addFromPicker() {
-    ImagePicker.pickImage(
-      source: ImageSource.gallery,
-    ).then((file) => _addFiles([file]));
+    try {
+      ImagePicker.pickImage(
+        source: ImageSource.gallery,
+      ).then((file) => _addFiles([file]));
+    } catch (_) {}
   }
 
   void deleteSelected() {
@@ -88,7 +90,11 @@ class Backend {
     print("Backend received: $message");
 
     if (message is UpdateGalleryImages) {
-      galleryImages.value = message.images;
+      galleryImages.value = message.images
+          .map(
+            (x) => MapEntry(x.key, File(x.value)),
+          )
+          .toList();
     } else if (message is ImagesAdded) {
       _gallerySnackbarStream.add(
         GalleryImagesAdded(

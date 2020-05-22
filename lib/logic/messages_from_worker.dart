@@ -5,7 +5,7 @@ import 'dart:io';
 abstract class MessageFromWorker {}
 
 class UpdateGalleryImages extends MessageFromWorker {
-  List<MapEntry<int, File>> images;
+  List<MapEntry<int, String>> images;
 
   UpdateGalleryImages(this.images) : assert(images != null);
 }

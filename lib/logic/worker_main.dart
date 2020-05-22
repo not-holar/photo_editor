@@ -15,42 +15,61 @@ void main(ReceivePort receivePort, SendPort sendPort) {
     print("Worker received: $message");
 
     if (message is AddImages) {
+      final ids = <int>{};
+
       message.images.map((x) => ImageState(x)).forEach(
         (image) {
           final id = imageStore.length;
-          imagesOrder.insert(0, id);
+          ids.add(id);
           imageStore.add(image);
         },
       );
+
+      imagesOrder.insertAll(0, ids);
+
       sendPort.send(UpdateGalleryImages(
         galleryImages(imageStore, imagesOrder),
       ));
+
+      sendPort.send(ImagesAdded(ids));
+
+      //
     } else if (message is RemoveImages) {
       for (final id in message.ids) {
         imagesOrder.remove(id);
       }
+
       sendPort.send(UpdateGalleryImages(
         galleryImages(imageStore, imagesOrder),
       ));
+
+      sendPort.send(ImagesRemoved(message.ids));
+
+      //
     } else if (message is RestoreImages) {
       imagesOrder.insertAll(
         0,
         message.ids.where((x) => x < imageStore.length),
       );
+
       sendPort.send(UpdateGalleryImages(
         galleryImages(imageStore, imagesOrder),
       ));
+
+      sendPort.send(ImagesRemoved(message.ids));
+
+      //
     }
   });
 }
 
-List<MapEntry<int, File>> galleryImages(
+List<MapEntry<int, String>> galleryImages(
   List<ImageState> store,
   List<int> order,
 ) {
   return order
       .map(
-        (id) => MapEntry(id, store[id].file),
+        (id) => MapEntry(id, store[id].file.path),
       )
       .toList();
 }
