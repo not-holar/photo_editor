@@ -4,11 +4,13 @@ import 'dart:isolate';
 // ignore_for_file: always_require_non_null_named_parameters
 
 class Worker {
-  final _completer = Completer<SendPort>();
+  final _fromIsolateStream = ReceivePort();
+
+  final _fromIsolateSubscription = Completer<StreamSubscription>();
+
+  final _toIsolateStream = Completer<SendPort>();
 
   final _isolateInstance = Completer<Isolate>();
-
-  final ReceivePort _fromIsolateStream = ReceivePort();
 
   /// Sends an asynchronous [message] through this send port, to its
   /// corresponding `ReceivePort`.
@@ -36,8 +38,14 @@ class Worker {
   /// The [onDone] handler will be called when the stream closes.
   /// The stream closes when [close] is called.
 
-  StreamSubscription<dynamic> Function(void Function(dynamic) onData,
-      {Function onError, void Function() onDone, bool cancelOnError}) listen;
+  FutureOr<void> Function(dynamic onData) _userListenFn;
+
+  Future<StreamSubscription<dynamic>> listen(
+    void Function(dynamic) onData,
+  ) async {
+    _userListenFn = onData;
+    return _fromIsolateSubscription.future;
+  }
 
   /// Creates a [Worker], which is an Isolate with the given [function] and
   /// takes care of managing the send and receive ports.
@@ -46,20 +54,28 @@ class Worker {
     assert(function != null);
 
     send = (dynamic message) {
-      _completer.future.then((x) => x.send(message));
+      _toIsolateStream.future.then((x) => x.send(message));
     };
 
-    listen = _fromIsolateStream.listen;
+    FutureOr<void> Function(dynamic onData) listenFn;
 
-    final oneTimeSubscription = _fromIsolateStream.listen((dynamic data) {
-      if (data is SendPort) {
-        final SendPort toIsolateStream = data;
+    listenFn = (dynamic message) {
+      if (message is SendPort) {
+        final SendPort toIsolateStream = message;
         send = toIsolateStream.send;
-        _completer.complete(toIsolateStream);
+        _toIsolateStream.complete(toIsolateStream);
+        listenFn = _userListenFn;
       }
-    });
+    };
 
-    _completer.future.then((_) => oneTimeSubscription.cancel());
+    _fromIsolateSubscription.complete(
+      _fromIsolateStream.listen((dynamic message) {
+        assert(listenFn != null);
+        listenFn?.call(message);
+      }),
+    );
+
+    // _toIsolateStream.future.then((_) => oneTimeSubscription.cancel());
 
     Isolate.spawn(
       _spawnIsolate,

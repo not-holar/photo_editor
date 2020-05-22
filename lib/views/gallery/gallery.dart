@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_hello_world/logic/selection.dart';
+import 'package:flutter_stream_listener/flutter_stream_listener.dart';
 
 import 'package:provider/provider.dart';
 
@@ -17,11 +19,8 @@ class Main extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => backend.galleryImages,
-        ),
-        ChangeNotifierProvider<ValueNotifier<Set<int>>>(
-          create: (_) => ValueNotifier(<int>{}),
+        ChangeNotifierProvider<Selection>(
+          create: (_) => backend.selection,
         ),
       ],
       child: Scaffold(
@@ -53,34 +52,40 @@ class GalleryGrid extends StatelessWidget {
     print("""GalleryGrid rebuilt 👷‍♀️""");
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final galleryImages = context.watch<ValueNotifier<List<File>>>().value;
 
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverSafeArea(
-          sliver: SliverPadding(
-            padding: const EdgeInsets.fromLTRB(4, 44, 4, 100),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
-                maxCrossAxisExtent: 150,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => GalleryImage(
-                  galleryImages[index],
-                  index: index,
-                  maxWidth: 150,
-                  pixelRatio: devicePixelRatio,
-                  backgroundColor: _imageBackgroundColor,
+    return ValueListenableBuilder<List<MapEntry<int, File>>>(
+      valueListenable: context.watch<Backend>().galleryImages,
+      builder: (context, list, _) => Consumer<Selection>(
+        builder: (_, selection, __) => CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverSafeArea(
+              sliver: SliverPadding(
+                padding: const EdgeInsets.fromLTRB(4, 44, 4, 100),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 4,
+                    maxCrossAxisExtent: 150,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => GalleryImage(
+                      maxWidth: 150,
+                      pixelRatio: devicePixelRatio,
+                      backgroundColor: _imageBackgroundColor,
+                      image: list[index].value,
+                      toggleSelection: () => selection.toggle(list[index].key),
+                      selecting: selection.selecting,
+                      selected: selection.has(list[index].key),
+                    ),
+                    childCount: list.length,
+                  ),
                 ),
-                childCount: galleryImages.length,
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -91,14 +96,20 @@ class GalleryImage extends StatelessWidget {
 
   final Color backgroundColor;
   final File image;
-  final int index;
   final int maxWidth;
   final double pixelRatio;
 
-  const GalleryImage(
-    this.image, {
+  final bool selecting;
+  final bool selected;
+
+  final void Function() toggleSelection;
+
+  const GalleryImage({
+    @required this.image,
     Key key,
-    this.index,
+    this.selecting,
+    this.selected,
+    this.toggleSelection,
     this.maxWidth = 50,
     this.pixelRatio = 1,
     this.backgroundColor = Colors.grey,
@@ -106,13 +117,6 @@ class GalleryImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context.select<ValueNotifier<Set<int>>, bool>(
-      (x) => x.value.isNotEmpty,
-    );
-    final selected = context.select<ValueNotifier<Set<int>>, bool>(
-      (x) => x.value.contains(index),
-    );
-
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -124,7 +128,6 @@ class GalleryImage extends StatelessWidget {
             curve: curve,
             child: Image(
               filterQuality: FilterQuality.high,
-              alignment: Alignment.center,
               fit: BoxFit.cover,
               image: ResizeImage.resizeIfNeeded(
                 (maxWidth * pixelRatio).round(),
@@ -137,7 +140,7 @@ class GalleryImage extends StatelessWidget {
         Material(
           type: MaterialType.transparency,
           child: InkWell(
-            onTap: () => toggleSelection(context, index, wasSelected: selected),
+            onTap: toggleSelection,
             onDoubleTap: selecting ? null : () => print("Open image"), // TODO
             enableFeedback: true,
             splashColor: Colors.white10,
@@ -168,19 +171,6 @@ class GalleryImage extends StatelessWidget {
       ],
     );
   }
-
-  static Future<void> toggleSelection(
-    BuildContext context,
-    int index, {
-    bool wasSelected,
-  }) async {
-    final v = context.read<ValueNotifier<Set<int>>>();
-    if (wasSelected) {
-      v.value = v.value.difference(<int>{index});
-    } else {
-      v.value = v.value.union(<int>{index});
-    }
-  }
 }
 
 class SelectionBar extends StatelessWidget {
@@ -188,15 +178,16 @@ class SelectionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selecting = context.select<ValueNotifier<Set<int>>, bool>(
-      (x) => x.value.isNotEmpty,
+    final backend = context.watch<Backend>();
+    final clearSelection = backend.selection.clear;
+
+    final selecting = context.select<Selection, bool>(
+      (x) => x.selecting,
     );
 
     return WillPopScope(
       onWillPop: () async {
-        if (selecting) {
-          context.read<ValueNotifier<Set<int>>>().value = {};
-        }
+        if (selecting) clearSelection();
         return !selecting;
       },
       child: Visibility(
@@ -216,28 +207,26 @@ class SelectionBar extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () {
-                      context.read<ValueNotifier<Set<int>>>().value = {};
-                    },
+                    onPressed: clearSelection,
                   ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25),
-                      child: Builder(builder: (context) {
+                      child: Consumer<Selection>(builder: (_, selection, __) {
                         return Text(
-                          context
-                              .select<ValueNotifier<Set<int>>, int>(
-                                (x) => x.value.length,
-                              )
-                              .toString(),
+                          selection.size.toString(),
                           textScaleFactor: 1.1,
                         );
                       }),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed: () => context.read<Backend>().deleteSelection(),
+                  InkWell(
+                    onTap: () {},
+                    onLongPress: backend.deleteSelected,
+                    child: const Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
@@ -294,64 +283,47 @@ class SnackbarListener extends StatelessWidget {
   const SnackbarListener({Key key, this.child}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) => child;
-  // {
-  // final showSnackBar = Scaffold.of(context).showSnackBar;
-  // final backend = context.watch<Backend>();
-  //
-  //   return StreamListener(
-  //     stream: backend.imagesAddedMessageStream,
-  //     onData: makeMessageProcessor(
-  //       showSnackBar,
-  //       addedMessageSnackbarBuilder,
-  //     ),
-  //     child: StreamListener(
-  //       stream: backend.imagesRemovedMessageStream,
-  //       onData: makeMessageProcessor(
-  //         showSnackBar,
-  //         removedMessageSnackbarBuilder,
-  //       ),
-  //       child: child,
-  //     ),
-  //   );
-  // }
+  Widget build(BuildContext context) {
+    final showSnackBar = Scaffold.of(context).showSnackBar;
+    final backend = context.watch<Backend>();
 
-  // SnackBar addedMessageSnackbarBuilder(ImageListMessage message) {
-  //   return SnackBar(
-  //     // TODO: make correct plurals
-  //     content: Text('Added ${message.changeAmount} images'),
-  //     action: SnackBarAction(
-  //       onPressed: message.undoAction,
-  //       label: "UNDO",
-  //     ),
-  //   );
-  // }
+    return StreamListener<GallerySnackbarMessage>(
+      stream: backend.gallerySnackbarStream,
+      onData: (message) => onData(message, showSnackBar),
+      child: child,
+    );
+  }
 
-  // SnackBar removedMessageSnackbarBuilder(ImageListMessage message) {
-  //   return SnackBar(
-  //     // behavior: SnackBarBehavior.floating,
-  //     content: Text(
-  //       'Removed ${message.changeAmount} images',
-  //       style: const TextStyle(
-  //         color: Colors.white,
-  //       ),
-  //     ),
-  //     action: SnackBarAction(
-  //       onPressed: message.undoAction,
-  //       label: "UNDO",
-  //       textColor: Colors.white,
-  //     ),
-  //     backgroundColor: Colors.redAccent,
-  //   );
-  // }
-
-  // Null Function(ImageListMessage) makeMessageProcessor(
-  //   ScaffoldFeatureController<SnackBar, SnackBarClosedReason> Function(SnackBar)
-  //       showSnackBar,
-  //   SnackBar Function(ImageListMessage) snackbarBuilder,
-  // ) {
-  //   return (ImageListMessage message) {
-  //     showSnackBar(snackbarBuilder(message));
-  //   };
-  // }
+  void onData(
+    GallerySnackbarMessage message,
+    ScaffoldFeatureController<SnackBar, SnackBarClosedReason> Function(SnackBar)
+        showSnackBar,
+  ) {
+    if (message is GalleryImagesAdded) {
+      showSnackBar(SnackBar(
+        // TODO: make correct plurals
+        content: Text('Added ${message.amount} images'),
+        action: SnackBarAction(
+          onPressed: message.undo,
+          label: "UNDO",
+        ),
+      ));
+    } else if (message is GalleryImagesRemoved) {
+      showSnackBar(SnackBar(
+        // behavior: SnackBarBehavior.floating,
+        content: Text(
+          'Removed ${message.amount} images',
+          style: const TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        action: SnackBarAction(
+          onPressed: message.undo,
+          label: "UNDO",
+          textColor: Colors.white,
+        ),
+        backgroundColor: Colors.redAccent,
+      ));
+    }
+  }
 }

@@ -6,10 +6,9 @@ class ImageState {
   ImageState(this._source);
 
   File get file => _source;
-  int get key => _source.hashCode;
 
   @override
   String toString() {
-    return 'ImageState($file, $key)';
+    return 'ImageState($file)';
   }
 }

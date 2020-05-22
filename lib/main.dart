@@ -166,9 +166,21 @@ class AppPageSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IndexedStack(
-      index: context.watch<ValueNotifier<int>>().value,
-      children: children,
+    final currentIndex = context.watch<ValueNotifier<int>>();
+
+    return WillPopScope(
+      onWillPop: () async {
+        if (currentIndex.value == 1) {
+          currentIndex.value = 1;
+          return false;
+        } else {
+          return true;
+        }
+      },
+      child: IndexedStack(
+        index: currentIndex.value,
+        children: children,
+      ),
     );
   }
 }
