@@ -4,12 +4,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_hello_world/logic/selection.dart';
-import 'package:flutter_stream_listener/flutter_stream_listener.dart';
 
+import 'package:flutter_stream_listener/flutter_stream_listener.dart';
 import 'package:provider/provider.dart';
+import 'package:animations/animations.dart';
 
 import 'package:flutter_hello_world/basic_widgets/circular_check_box.dart';
+import 'package:flutter_hello_world/logic/selection.dart';
 import 'package:flutter_hello_world/logic/backend.dart';
 
 class Main extends StatelessWidget {
@@ -26,21 +27,49 @@ class Main extends StatelessWidget {
           create: (_) => backend.selection,
         ),
       ],
-      child: Scaffold(
-        appBar: const TopShadow(),
+      child: const Scaffold(
+        appBar: TopShadow(),
         extendBodyBehindAppBar: true,
-        body: const SnackbarListener(
+        body: SnackbarListener(
           child: GalleryGrid(),
         ),
-        floatingActionButton: FloatingActionButton(
-          // TODO: open menu with gallery and camera (Use animations lib)
-          onPressed: backend.addFromPicker,
-          tooltip: 'Expand Gallery Menu',
-          child: const Icon(Icons.add),
-        ),
-        bottomNavigationBar: const SelectionBar(),
+        floatingActionButton: GalleryFab(),
+        bottomNavigationBar: SelectionBar(),
       ),
     );
+  }
+}
+
+class GalleryFab extends StatelessWidget {
+  const GalleryFab({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final backend = context.watch<Backend>();
+
+    return Navigator(
+        // on
+        //     child: OpenContainer(
+        //   closedBuilder: (context, action) {
+        //     return FloatingActionButton(
+        //       // TODO: open menu with gallery and camera (Use animations lib)
+        //       onPressed: action,
+        //       tooltip: 'Expand Gallery Menu',
+        //       child: const Icon(Icons.add),
+        //     );
+        //   },
+        //   openBuilder: (context, action) {
+        //     return FloatingActionButton(
+        //       // TODO: open menu with gallery and camera (Use animations lib)
+        //       onPressed: backend.addFromPicker,
+        //       tooltip: 'Expand Gallery Menu',
+        //       child: const Icon(Icons.add),
+        //     );
+        //   },
+        //   tappable: true,
+        //   transitionDuration: Duration(seconds: 3),
+        // ),
+        );
   }
 }
 
@@ -215,21 +244,17 @@ class SelectionBar extends StatelessWidget {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25),
-                      child: Consumer<Selection>(builder: (_, selection, __) {
-                        return Text(
+                      child: Consumer<Selection>(
+                        builder: (_, selection, __) => Text(
                           selection.size.toString(),
                           textScaleFactor: 1.1,
-                        );
-                      }),
+                        ),
+                      ),
                     ),
                   ),
-                  InkWell(
-                    onTap: () {},
-                    onLongPress: backend.deleteSelected,
-                    child: const Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    onPressed: backend.deleteSelected,
                   ),
                 ],
               ),
