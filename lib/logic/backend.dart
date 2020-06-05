@@ -6,7 +6,7 @@ import 'package:flutter_hello_world/logic/selection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-import 'image/image_state.dart';
+import 'image/image_store.dart';
 
 class Backend {
   // Public vars
@@ -15,6 +15,8 @@ class Backend {
       ValueNotifier([]);
 
   final Selection selection = Selection();
+
+  ImageStore _imageStore;
 
   Stream<GallerySnackbarMessage> get gallerySnackbarStream =>
       _gallerySnackbarStream.stream;
@@ -28,6 +30,12 @@ class Backend {
   // Initialization
 
   Backend() {
+    _imageStore = ImageStore(
+      onUpdated: _onImagesUpdated,
+      onAdded: _onImagesAdded,
+      onRemoved: _onImagesRemoved,
+    );
+
     try {
       List<File> processShared(List<SharedMediaFile> shared) => shared
           ?.where((x) => x.type == SharedMediaType.IMAGE)
@@ -82,7 +90,7 @@ class Backend {
   }
 
   void deleteSelected() {
-    __removeImages(Set.of(selection));
+    _imageStore.removeImages(Set.of(selection));
     selection.clear();
   }
 
@@ -97,11 +105,11 @@ class Backend {
   void _addFiles(List<File> files) {
     final filtered = files?.where((x) => x != null)?.toList();
     if (filtered == null || filtered.isEmpty) return;
-    __addImages(filtered);
+    _imageStore.addImages(filtered);
   }
 
   // ignore: use_setters_to_change_properties
-  void _onUpdateGalleryImages(List<MapEntry<int, File>> images) {
+  void _onImagesUpdated(List<MapEntry<int, File>> images) {
     galleryImages.value = images;
   }
 
@@ -109,7 +117,7 @@ class Backend {
     _gallerySnackbarStream.add(
       GalleryImagesAdded(
         ids.length,
-        () => __removeImages(ids),
+        () => _imageStore.removeImages(ids),
       ),
     );
   }
@@ -118,72 +126,9 @@ class Backend {
     _gallerySnackbarStream.add(
       GalleryImagesRemoved(
         ids.length,
-        () => __restoreImages(ids),
+        () => _imageStore.restoreImages(ids),
       ),
     );
-  }
-
-  /// ` Image Store `
-
-  final __imageStore = <ImageState>[];
-  final __imagesOrder = <int>[];
-
-  void __addImages(List<File> images) {
-    final ids = <int>{};
-
-    images.map((x) => ImageState(x)).forEach(
-      (image) {
-        final id = __imageStore.length;
-        ids.add(id);
-        __imageStore.add(image);
-      },
-    );
-
-    __imagesOrder.insertAll(0, ids);
-
-    _onUpdateGalleryImages(
-      __makeGalleryImages(__imageStore, __imagesOrder),
-    );
-
-    _onImagesAdded(ids);
-  }
-
-  void __removeImages(Set<int> ids) {
-    for (final id in ids) {
-      __imagesOrder.remove(id);
-    }
-
-    _onUpdateGalleryImages(
-      __makeGalleryImages(__imageStore, __imagesOrder),
-    );
-
-    _onImagesRemoved(ids);
-  }
-
-  void __restoreImages(Set<int> ids) {
-    __imagesOrder.insertAll(
-      0,
-      ids.where(
-        (x) => x < __imageStore.length && !__imagesOrder.contains(x),
-      ),
-    );
-
-    _onUpdateGalleryImages(
-      __makeGalleryImages(__imageStore, __imagesOrder),
-    );
-
-    _onImagesAdded(ids);
-  }
-
-  List<MapEntry<int, File>> __makeGalleryImages(
-    List<ImageState> store,
-    List<int> order,
-  ) {
-    return order
-        .map(
-          (id) => MapEntry(id, store[id].file),
-        )
-        .toList();
   }
 }
 
