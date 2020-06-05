@@ -47,29 +47,86 @@ class GalleryFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final backend = context.watch<Backend>();
 
-    return Navigator(
-        // on
-        //     child: OpenContainer(
-        //   closedBuilder: (context, action) {
-        //     return FloatingActionButton(
-        //       // TODO: open menu with gallery and camera (Use animations lib)
-        //       onPressed: action,
-        //       tooltip: 'Expand Gallery Menu',
-        //       child: const Icon(Icons.add),
-        //     );
-        //   },
-        //   openBuilder: (context, action) {
-        //     return FloatingActionButton(
-        //       // TODO: open menu with gallery and camera (Use animations lib)
-        //       onPressed: backend.addFromPicker,
-        //       tooltip: 'Expand Gallery Menu',
-        //       child: const Icon(Icons.add),
-        //     );
-        //   },
-        //   tappable: true,
-        //   transitionDuration: Duration(seconds: 3),
-        // ),
+    return OpenContainer(
+      closedShape: const CircleBorder(),
+      closedBuilder: (context, open) {
+        return IconButton(
+          onPressed: open,
+          tooltip: 'Expand Gallery Menu',
+          padding: const EdgeInsets.all(16),
+          icon: const Icon(Icons.add),
         );
+      },
+      openBuilder: (context, close) {
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: Builder(builder: (context) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                FlatButton.icon(
+                  onPressed: () async {
+                    try {
+                      if (await backend.addFromPicker()) close();
+                    } catch (error) {
+                      Scaffold.of(context).showSnackBar(
+                        SnackBar(content: Text('$error')),
+                      );
+                    }
+                  },
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
+                  label: const Text(
+                    'Add from Gallery',
+                    textScaleFactor: 1.5,
+                  ),
+                  icon: const Padding(
+                    padding: EdgeInsets.only(right: 4),
+                    child: Icon(Icons.photo_library),
+                  ),
+                ),
+                const Divider(
+                  height: 40,
+                  indent: 32,
+                  endIndent: 32,
+                  thickness: 1,
+                ),
+                FlatButton.icon(
+                  onPressed: () async {
+                    try {
+                      if (await backend.addFromCamera()) close();
+                    } catch (error) {
+                      Scaffold.of(context).showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          content: Text('$error'),
+                        ),
+                      );
+                    }
+                  },
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
+                  label: const Text(
+                    'Add from Camera',
+                    textScaleFactor: 1.5,
+                  ),
+                  icon: const Padding(
+                    padding: EdgeInsets.only(right: 4),
+                    child: Icon(Icons.photo_camera),
+                  ),
+                ),
+              ],
+            );
+          }),
+        );
+      },
+      transitionType: ContainerTransitionType.fadeThrough,
+      // transitionDuration: const Duration(milliseconds: 500),
+    );
   }
 }
 
@@ -173,8 +230,6 @@ class GalleryImage extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             onTap: toggleSelection,
-            onDoubleTap: selecting ? null : () => print("Open image"), // TODO
-            enableFeedback: true,
             splashColor: Colors.white10,
           ),
         ),
@@ -253,8 +308,9 @@ class SelectionBar extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
                     onPressed: backend.deleteSelected,
+                    tooltip: "Delete Selected Images",
+                    icon: const Icon(Icons.delete_outline, size: 20),
                   ),
                 ],
               ),

@@ -55,19 +55,30 @@ class Backend {
 
   // Backend Public Methods
 
-  void addFromPicker() {
-    try {
-      ImagePicker.pickImage(
-        source: ImageSource.gallery,
-      ).then(
-        (file) {
-          _addFiles([file]);
-        },
-        onError: (dynamic e) {
-          print(e);
-        },
-      );
-    } catch (_) {}
+  Future<bool> addFromPicker() async {
+    final file = await ImagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (file != null) {
+      _addFiles([file]);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> addFromCamera() async {
+    final file = await ImagePicker.pickImage(
+      source: ImageSource.camera,
+    );
+
+    if (file != null) {
+      _addFiles([file]);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   void deleteSelected() {
