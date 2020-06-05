@@ -170,8 +170,8 @@ class AppPageSelector extends StatelessWidget {
 
     return WillPopScope(
       onWillPop: () async {
-        if (currentIndex.value == 1) {
-          currentIndex.value = 1;
+        if (currentIndex.value != 0) {
+          currentIndex.value = 0;
           return false;
         } else {
           return true;
