@@ -2,30 +2,30 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_hello_world/logic/selection.dart';
+import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import 'image/image_store.dart';
+import 'selection.dart';
 
 class Backend {
-  // Public vars
+  ImageStore _imageStore;
 
   final ValueNotifier<List<MapEntry<int, File>>> galleryImages =
       ValueNotifier([]);
 
   final Selection selection = Selection();
 
-  ImageStore _imageStore;
-
-  Stream<GallerySnackbarMessage> get gallerySnackbarStream =>
-      _gallerySnackbarStream.stream;
-
-  // Private vars
+  // final ScrollController galleryScrollController = ScrollController();
 
   final _sharedFilesSubscription = Completer<StreamSubscription>();
 
-  final _gallerySnackbarStream = StreamController<GallerySnackbarMessage>();
+  final _gallerySnackbarStream =
+      StreamController<GallerySnackbarMessage>.broadcast();
+
+  Stream<GallerySnackbarMessage> get gallerySnackbarStream =>
+      _gallerySnackbarStream.stream;
 
   // Initialization
 
@@ -37,26 +37,31 @@ class Backend {
     );
 
     try {
-      List<File> processShared(List<SharedMediaFile> shared) => shared
-          ?.where((x) => x.type == SharedMediaType.IMAGE)
-          ?.map((x) => File(x.path))
-          ?.toList();
+      List<File> processShared(List<SharedMediaFile> shared) {
+        return shared
+            ?.where((x) => x.type == SharedMediaType.IMAGE)
+            ?.map((x) => File(x.path))
+            ?.toList();
+      }
 
       _sharedFilesSubscription.complete(
         ReceiveSharingIntent.getMediaStream().listen(
           (list) => _addFiles(processShared(list)),
-          onError: (dynamic err) => print("getIntentDataStream error: $err"),
+          onError: (dynamic err) =>
+              debugPrint("getIntentDataStream error: $err"),
         ),
       );
 
-      ReceiveSharingIntent.getInitialMedia()
-          .then((list) => _addFiles(processShared(list)));
-      //
+      ReceiveSharingIntent.getInitialMedia().then(
+        (list) => _addFiles(processShared(list)),
+      );
     } catch (_) {}
 
     try {
       ImagePicker.retrieveLostData().then((x) {
-        if (x != null && x.file != null) _addFiles([x.file]);
+        if (x != null && x.file != null) {
+          _addFiles([x.file]);
+        }
       });
     } catch (_) {}
   }
@@ -87,6 +92,10 @@ class Backend {
     } else {
       return false;
     }
+  }
+
+  void moveImage(int id, int toIndex) {
+    _imageStore.moveImage(id, toIndex);
   }
 
   void deleteSelected() {

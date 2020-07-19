@@ -1,24 +1,27 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+// import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:flutter/services.dart';
 
 import 'package:hsluv/extensions.dart';
 import 'package:provider/provider.dart';
 
 import 'logic/backend.dart';
-import 'views/editor/editor.dart' as _editor;
-import 'views/gallery/gallery.dart' as _gallery;
+import 'views/editor/editor.dart' show Editor;
+import 'views/gallery/gallery.dart' show Gallery;
 
-void main() => runApp(App());
+void main() {
+  // timeDilation = 10.0;
+  runApp(App());
+}
 
 class App extends StatelessWidget {
-  static ThemeData get baseTheme => ThemeData(
+  static ThemeData get darkTheme => ThemeData(
         splashFactory: InkRipple.splashFactory,
         highlightColor: Colors.transparent,
         primarySwatch: Colors.grey,
-      );
-
-  static ThemeData get darkTheme => baseTheme.copyWith(
         brightness: Brightness.dark,
+        backgroundColor: Colors.black,
         accentColor: hsluvToRGBColor(const [75, 10, 90]),
         scaffoldBackgroundColor: Colors.black,
         cardColor: hsluvToRGBColor(const [75, 0, 6]),
@@ -47,8 +50,12 @@ class App extends StatelessWidget {
         canvasColor: hsluvToRGBColor(const [75, 0, 10]),
       );
 
-  static ThemeData get lightTheme => baseTheme.copyWith(
+  static ThemeData get lightTheme => ThemeData(
+        splashFactory: InkRipple.splashFactory,
+        highlightColor: Colors.transparent,
+        primarySwatch: Colors.grey,
         brightness: Brightness.light,
+        backgroundColor: hsluvToRGBColor(const [75, 0, 95]),
         accentColor: hsluvToRGBColor(const [75, 10, 50]),
         scaffoldBackgroundColor: hsluvToRGBColor(const [75, 0, 95]),
         unselectedWidgetColor: Colors.black26,
@@ -84,43 +91,58 @@ class App extends StatelessWidget {
     ]);
 
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      debugShowCheckedModeBanner: false,
-      home: Builder(builder: (context) {
-        return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            systemNavigationBarColor: Theme.of(context).colorScheme.surface,
-            systemNavigationBarIconBrightness:
-                ThemeData.estimateBrightnessForColor(
-              Theme.of(context).colorScheme.onSurface,
+        title: 'Flutter Demo',
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        debugShowCheckedModeBanner: false,
+        home: const AppHome());
+  }
+}
+
+class AppHome extends StatelessWidget {
+  const AppHome({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ValueNotifier<int>(0),
+        ),
+        Provider(
+          create: (_) => Backend(),
+          dispose: (_, Backend x) => x.dispose(),
+          lazy: false,
+        ),
+      ],
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarBrightness: ThemeData.estimateBrightnessForColor(
+              theme.colorScheme.background),
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: ThemeData.estimateBrightnessForColor(
+              theme.colorScheme.onBackground),
+          systemNavigationBarColor: theme.colorScheme.surface,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness:
+              ThemeData.estimateBrightnessForColor(theme.colorScheme.onSurface),
+        ),
+        child: Column(
+          children: const [
+            Expanded(
+              child: AppPageSwitcher(
+                children: [
+                  Gallery(),
+                  Editor(),
+                ],
+              ),
             ),
-            systemNavigationBarDividerColor: Colors.transparent,
-          ),
-          child: MultiProvider(
-            providers: [
-              ChangeNotifierProvider(
-                create: (_) => ValueNotifier<int>(0),
-              ),
-              Provider(
-                create: (_) => Backend(),
-                dispose: (_, Backend x) => x.dispose(),
-                lazy: false,
-              ),
-            ],
-            child: Column(children: [
-              Expanded(
-                child: AppPageSelector(children: [
-                  _gallery.Main(),
-                  _editor.Main(),
-                ]),
-              ),
-              const AppNavigationBar(),
-            ]),
-          ),
-        );
-      }),
+            AppNavigationBar(),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -131,10 +153,13 @@ class AppNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentIndex = context.watch<ValueNotifier<int>>();
+    final mediaQuery = MediaQuery.of(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border(top: Divider.createBorderSide(context)),
+        border: Border(
+          top: Divider.createBorderSide(context),
+        ),
       ),
       child: BottomNavigationBar(
         onTap: (index) => currentIndex.value = index,
@@ -144,14 +169,36 @@ class AppNavigationBar extends StatelessWidget {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         elevation: 0,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.photo_library),
-            title: Text("Gallery"),
+            icon: Padding(
+              padding: EdgeInsets.fromLTRB(
+                2,
+                2,
+                2,
+                mediaQuery.viewInsets.bottom,
+              ),
+              child: Icon(
+                Icons.photo_library,
+                size: 22,
+              ),
+            ),
+            title: const Text("Gallery"),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.edit),
-            title: Text("Editor"),
+            icon: Padding(
+              padding: EdgeInsets.fromLTRB(
+                2,
+                2,
+                2,
+                mediaQuery.viewInsets.bottom,
+              ),
+              child: Icon(
+                Icons.edit,
+                size: 22,
+              ),
+            ),
+            title: const Text("Editor"),
           ),
         ],
       ),
@@ -159,28 +206,42 @@ class AppNavigationBar extends StatelessWidget {
   }
 }
 
-class AppPageSelector extends StatelessWidget {
+class AppPageSwitcher extends StatelessWidget {
   final List<Widget> children;
 
-  const AppPageSelector({Key key, this.children}) : super(key: key);
+  const AppPageSwitcher({Key key, this.children}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = context.watch<ValueNotifier<int>>();
+    final background = Theme.of(context).colorScheme.background;
 
     return WillPopScope(
       onWillPop: () async {
-        if (currentIndex.value != 0) {
-          currentIndex.value = 0;
+        final selectedPage = context.read<ValueNotifier<int>>();
+
+        if (selectedPage.value != 0) {
+          selectedPage.value = 0;
           return false;
         } else {
           return true;
         }
       },
-      child: IndexedStack(
-        index: currentIndex.value,
-        children: children,
-      ),
+      child: Builder(builder: (context) {
+        return PageTransitionSwitcher(
+          // duration: const Duration(milliseconds: 1000),
+          transitionBuilder: (child, animation, secondaryAnimation) {
+            return ColoredBox(
+              color: background,
+              child: FadeThroughTransition(
+                animation: animation,
+                secondaryAnimation: secondaryAnimation,
+                child: child,
+              ),
+            );
+          },
+          child: children[context.watch<ValueNotifier<int>>().value],
+        );
+      }),
     );
   }
 }

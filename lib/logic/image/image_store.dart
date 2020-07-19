@@ -63,6 +63,19 @@ class ImageStore {
     onAdded(ids);
   }
 
+  void moveImage(int id, int toIndex) {
+    if (toIndex == _imagesOrder.indexOf(id)) {
+      return;
+    }
+
+    _imagesOrder.remove(id);
+    _imagesOrder.insert(toIndex, id);
+
+    onUpdated(
+      makeGalleryImages(_imageStore, _imagesOrder),
+    );
+  }
+
   List<MapEntry<int, File>> makeGalleryImages(
     List<ImageState> store,
     List<int> order,

@@ -1,11 +1,10 @@
+import 'dart:collection';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:flutter_stream_listener/flutter_stream_listener.dart';
 import 'package:provider/provider.dart';
 import 'package:animations/animations.dart';
 
@@ -13,25 +12,36 @@ import 'package:flutter_hello_world/basic_widgets/circular_check_box.dart';
 import 'package:flutter_hello_world/logic/selection.dart';
 import 'package:flutter_hello_world/logic/backend.dart';
 
-class Main extends StatelessWidget {
+import 'snackbar_listener.dart';
+
+class Gallery extends StatelessWidget {
+  const Gallery({Key key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final backend = context.watch<Backend>();
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<ValueNotifier<List<MapEntry<int, File>>>>(
-          create: (_) => backend.galleryImages,
+        ChangeNotifierProvider<ValueNotifier<List<MapEntry<int, File>>>>.value(
+          value: backend.galleryImages,
         ),
-        ChangeNotifierProvider<Selection>(
-          create: (_) => backend.selection,
+        ChangeNotifierProvider<Selection>.value(
+          value: backend.selection,
         ),
       ],
       child: const Scaffold(
-        appBar: TopShadow(),
-        extendBodyBehindAppBar: true,
-        body: SnackbarListener(
-          child: GalleryGrid(),
+        appBar: PreferredSize(
+          preferredSize: Size.zero,
+          child: SizedBox.expand(),
+        ),
+        body: Material(
+          type: MaterialType.transparency,
+          child: SnackbarListener(
+            child: GalleryGrid(
+              padding: EdgeInsets.fromLTRB(4, 44, 4, 100),
+            ),
+          ),
         ),
         floatingActionButton: GalleryFab(),
         bottomNavigationBar: SelectionBar(),
@@ -46,9 +56,13 @@ class GalleryFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final backend = context.watch<Backend>();
+    final color = Theme.of(context).colorScheme.surface;
 
     return OpenContainer(
+      transitionType: ContainerTransitionType.fadeThrough,
+      // transitionDuration: const Duration(milliseconds: 1500),
       closedShape: const CircleBorder(),
+      closedColor: color,
       closedBuilder: (context, open) {
         return IconButton(
           onPressed: open,
@@ -57,13 +71,16 @@ class GalleryFab extends StatelessWidget {
           icon: const Icon(Icons.add),
         );
       },
+      openColor: color,
       openBuilder: (context, close) {
+        final theme = Theme.of(context);
+
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: theme.colorScheme.surface,
           body: Builder(builder: (context) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
+              children: [
                 FlatButton.icon(
                   onPressed: () async {
                     try {
@@ -124,8 +141,6 @@ class GalleryFab extends StatelessWidget {
           }),
         );
       },
-      transitionType: ContainerTransitionType.fadeThrough,
-      // transitionDuration: const Duration(milliseconds: 500),
     );
   }
 }
@@ -134,46 +149,233 @@ class GalleryGrid extends StatelessWidget {
   static final Color _imageBackgroundColor =
       Colors.grey.shade400.withOpacity(.5);
 
-  const GalleryGrid({Key key}) : super(key: key);
+  final EdgeInsets padding;
+
+  static const double maxCrossAxisExtent = 150;
+  static const double crossAxisSpacing = 4;
+  static const double mainAxisSpacing = crossAxisSpacing;
+
+  const GalleryGrid({
+    Key key,
+    this.padding = EdgeInsets.zero,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    print("""GalleryGrid rebuilt 👷‍♀️""");
-
+    final backend = context.watch<Backend>();
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
 
     return Consumer<ValueNotifier<List<MapEntry<int, File>>>>(
-      builder: (context, list, _) => Consumer<Selection>(
-        builder: (_, selection, __) => CustomScrollView(
+        builder: (context, list, _) {
+      final idIndexMap = HashMap.fromIterables(
+        list.value.map((entry) => entry.key),
+        Iterable<int>.generate(list.value.length),
+      );
+      return LayoutBuilder(builder: (context, constraints) {
+        final crossAxisCount = (( //
+                    constraints.maxWidth -
+                        padding.horizontal -
+                        MediaQuery.of(context).viewInsets.horizontal //
+                ) /
+                (maxCrossAxisExtent + crossAxisSpacing) //
+            )
+            .ceil();
+
+        return CustomScrollView(
+          key: const PageStorageKey(GalleryGrid),
           physics: const BouncingScrollPhysics(),
           slivers: [
             SliverSafeArea(
               sliver: SliverPadding(
-                padding: const EdgeInsets.fromLTRB(4, 44, 4, 100),
+                padding: padding,
                 sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
-                    maxCrossAxisExtent: 150,
+                    mainAxisSpacing: mainAxisSpacing,
+                    crossAxisSpacing: crossAxisSpacing,
+                    maxCrossAxisExtent: maxCrossAxisExtent,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => GalleryImage(
-                      maxWidth: 150,
-                      pixelRatio: devicePixelRatio,
-                      backgroundColor: _imageBackgroundColor,
-                      image: list.value[index].value,
-                      toggleSelection: () =>
-                          selection.toggle(list.value[index].key),
-                      selecting: selection.selecting,
-                      selected: selection.has(list.value[index].key),
-                    ),
+                    (context, index) {
+                      return GalleryItem(
+                        key: ValueKey<int>(list.value[index].key),
+                        entry: list.value[index],
+                        index: index,
+                        backend: backend,
+                        imageBackgroundColor: _imageBackgroundColor,
+                        devicePixelRatio: devicePixelRatio,
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: crossAxisSpacing,
+                        mainAxisSpacing: mainAxisSpacing,
+                      );
+                    },
                     childCount: list.value.length,
+                    findChildIndexCallback: (key) =>
+                        idIndexMap[(key as ValueKey<int>).value],
+                    addAutomaticKeepAlives: false,
                   ),
                 ),
               ),
             ),
           ],
-        ),
+        );
+      });
+    });
+  }
+}
+
+class GalleryItem extends StatefulWidget {
+  const GalleryItem({
+    Key key,
+    @required this.entry,
+    @required this.index,
+    @required this.imageBackgroundColor,
+    @required this.devicePixelRatio,
+    @required this.backend,
+    @required this.crossAxisCount,
+    @required this.crossAxisSpacing,
+    @required this.mainAxisSpacing,
+  }) : super(key: key);
+
+  final Color imageBackgroundColor;
+  final double devicePixelRatio;
+  final Backend backend;
+  final MapEntry<int, File> entry;
+  final int index;
+  final int crossAxisCount;
+  final double crossAxisSpacing;
+  final double mainAxisSpacing;
+
+  @override
+  _GalleryItemState createState() => _GalleryItemState();
+}
+
+class _GalleryItemState extends State<GalleryItem> {
+  @override
+  void initState() {
+    super.initState();
+    previousIndex = widget.index;
+  }
+
+  final _globalKey = GlobalKey();
+
+  ImageProvider image;
+
+  int previousIndex;
+  Offset midFlightOffset = Offset.zero;
+
+  bool currentlyDragging = false;
+
+  Offset offsetFromIndices(int last, int current) {
+    Offset position(int index) => Offset(
+          (index % widget.crossAxisCount).toDouble(),
+          (index / widget.crossAxisCount).floorToDouble(),
+        );
+
+    return (last == current)
+        ? Offset.zero
+        : (position(current) - position(last));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final offset = offsetFromIndices(previousIndex, widget.index);
+    previousIndex = widget.index;
+
+    return Ink(
+      color: widget.imageBackgroundColor,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final size = constraints.maxWidth;
+
+          // Size should never change so it's fine to cache it for as long as the state lives
+          image ??= ResizeImage.resizeIfNeeded(
+            (size * widget.devicePixelRatio).round(),
+            null,
+            FileImage(widget.entry.value),
+          );
+
+          return TweenAnimationBuilder<Offset>(
+            key: ValueKey(widget.index),
+            duration: currentlyDragging
+                ? const Duration()
+                : Duration(milliseconds: 200 + (150 * offset.distance).floor()),
+            curve: Curves.fastOutSlowIn,
+            tween: Tween<Offset>(
+              begin: -offset.scale(
+                    size + widget.crossAxisSpacing,
+                    size + widget.mainAxisSpacing,
+                  ) +
+                  midFlightOffset,
+              end: Offset.zero,
+            ),
+            builder: (context, offset, child) {
+              midFlightOffset = offset;
+
+              return Transform.translate(
+                offset: offset,
+                child: child,
+              );
+            },
+            child: Consumer<Selection>(
+              key: _globalKey,
+              builder: (context, selection, _) =>
+                  LongPressDraggable<MapEntry<int, File>>(
+                data: widget.entry,
+                onDragStarted: () => currentlyDragging = true,
+                onDragEnd: (_) => currentlyDragging = false,
+                feedback: TweenAnimationBuilder(
+                  duration: const Duration(milliseconds: 50),
+                  curve: Curves.fastOutSlowIn,
+                  tween: Tween<double>(begin: 0, end: 1),
+                  builder: (context, double tween, child) {
+                    final borderWidth = tween * widget.crossAxisSpacing;
+
+                    return Transform.translate(
+                      offset: Offset(-borderWidth, -borderWidth),
+                      child: SizedBox(
+                        width: size + borderWidth * 2,
+                        height: size + borderWidth * 2,
+                        child: Material(
+                          elevation: 8 * tween,
+                          // color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.all(borderWidth),
+                            child: child,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  child: ChangeNotifierProvider.value(
+                    value: selection,
+                    child: Consumer<Selection>(
+                      builder: (context, selection, _) => GalleryImage(
+                        image: image,
+                        selecting: selection.selecting,
+                        selected: selection.has(widget.entry.key),
+                      ),
+                    ),
+                  ),
+                ),
+                childWhenDragging: const SizedBox.expand(),
+                child: DragTarget<MapEntry<int, File>>(
+                  onWillAccept: (entry) {
+                    widget.backend.moveImage(entry.key, widget.index);
+                    return false;
+                  },
+                  builder: (context, _, __) {
+                    return GalleryImage(
+                      image: image,
+                      selecting: selection.selecting,
+                      selected: selection.has(widget.entry.key),
+                      onTap: () => selection.toggle(widget.entry.key),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -183,25 +385,19 @@ class GalleryImage extends StatelessWidget {
   static const curve = Curves.fastOutSlowIn;
   static const duration = Duration(milliseconds: 250);
 
-  final Color backgroundColor;
-  final File image;
-  final int maxWidth;
-  final double pixelRatio;
+  final ImageProvider image;
+
+  final VoidCallback onTap;
 
   final bool selecting;
   final bool selected;
-
-  final void Function() toggleSelection;
 
   const GalleryImage({
     @required this.image,
     Key key,
     this.selecting,
     this.selected,
-    this.toggleSelection,
-    this.maxWidth = 50,
-    this.pixelRatio = 1,
-    this.backgroundColor = Colors.grey,
+    this.onTap,
   }) : super(key: key);
 
   @override
@@ -209,30 +405,24 @@ class GalleryImage extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Container(
-          color: backgroundColor,
-          child: AnimatedPadding(
-            padding: selected ? const EdgeInsets.all(15) : EdgeInsets.zero,
-            duration: duration,
-            curve: curve,
-            child: Image(
-              filterQuality: FilterQuality.high,
-              fit: BoxFit.cover,
-              image: ResizeImage.resizeIfNeeded(
-                (maxWidth * pixelRatio).round(),
-                null,
-                FileImage(image),
-              ),
+        AnimatedPadding(
+          padding: selected ? const EdgeInsets.all(15) : EdgeInsets.zero,
+          duration: duration,
+          curve: curve,
+          child: Image(
+            filterQuality: FilterQuality.high,
+            fit: BoxFit.cover,
+            image: image,
+          ),
+        ),
+        if (onTap != null)
+          Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
+              splashColor: Colors.white10,
             ),
           ),
-        ),
-        Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: toggleSelection,
-            splashColor: Colors.white10,
-          ),
-        ),
         IgnorePointer(
           child: AnimatedOpacity(
             opacity: selecting ? 1.0 : 0.0,
@@ -280,6 +470,7 @@ class SelectionBar extends StatelessWidget {
       child: Visibility(
         visible: selecting,
         child: DecoratedBox(
+          position: DecorationPosition.foreground,
           decoration: BoxDecoration(
             border: Border(top: Divider.createBorderSide(context)),
           ),
@@ -322,32 +513,20 @@ class SelectionBar extends StatelessWidget {
   }
 }
 
-class TopShadow extends StatelessWidget implements PreferredSizeWidget {
-  @override
-  Size get preferredSize => const Size(0, 0);
-
-  const TopShadow() : super();
+class TopShadow extends StatelessWidget {
+  const TopShadow({Key key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(builder: _builder);
-
-  Widget _builder(BuildContext context, BoxConstraints constraints) {
-    return Visibility(
-      visible: constraints.maxHeight != 0,
-      child: IgnorePointer(
-        child: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarBrightness: Theme.of(context).brightness,
-            statusBarIconBrightness: ThemeData.estimateBrightnessForColor(
-              Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      return Visibility(
+        visible: constraints.maxHeight != 0,
+        child: IgnorePointer(
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.background.withOpacity(.9),
+                  Theme.of(context).colorScheme.background,
                   Theme.of(context).colorScheme.background.withOpacity(0),
                 ],
                 begin: Alignment.topLeft,
@@ -356,58 +535,7 @@ class TopShadow extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class SnackbarListener extends StatelessWidget {
-  final Widget child;
-
-  const SnackbarListener({Key key, this.child}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final showSnackBar = Scaffold.of(context).showSnackBar;
-    final backend = context.watch<Backend>();
-
-    return StreamListener<GallerySnackbarMessage>(
-      stream: backend.gallerySnackbarStream,
-      onData: (message) => onData(message, showSnackBar),
-      child: child,
-    );
-  }
-
-  void onData(
-    GallerySnackbarMessage message,
-    ScaffoldFeatureController<SnackBar, SnackBarClosedReason> Function(SnackBar)
-        showSnackBar,
-  ) {
-    if (message is GalleryImagesAdded) {
-      showSnackBar(SnackBar(
-        // TODO: make correct plurals
-        content: Text('Added ${message.amount} images'),
-        action: SnackBarAction(
-          onPressed: message.undo,
-          label: "UNDO",
-        ),
-      ));
-    } else if (message is GalleryImagesRemoved) {
-      showSnackBar(SnackBar(
-        // behavior: SnackBarBehavior.floating,
-        content: Text(
-          'Removed ${message.amount} images',
-          style: const TextStyle(
-            color: Colors.white,
-          ),
-        ),
-        action: SnackBarAction(
-          onPressed: message.undo,
-          label: "UNDO",
-          textColor: Colors.white,
-        ),
-        backgroundColor: Colors.redAccent,
-      ));
-    }
+      );
+    });
   }
 }

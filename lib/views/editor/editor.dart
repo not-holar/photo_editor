@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class Main extends StatelessWidget {
+class Editor extends StatelessWidget {
+  const Editor({Key key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text("Editor"),
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.zero,
+        child: const SizedBox.expand(),
+      ),
+      body: const Center(
+        child: Placeholder(),
       ),
     );
   }
